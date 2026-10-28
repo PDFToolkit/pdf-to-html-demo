@@ -137,7 +137,7 @@ class BrowserChecks {
         try {
           new PreviewDocument({html: '<html><body>' + '<img src="large.png">'.repeat(128) + '</body></html>',
             assets: [{filename: 'large.png', mediaType: 'image/png', bytes: new Uint8Array(256 * 1024)}], trustedReset: false}, []).build();
-        } catch { expansionRejected = true; }
+        } catch (error) { expansionRejected = error.code === 'preview_limit'; }
         return {scripts: doc.querySelectorAll('script,iframe,base,[onload],[action],[formaction]').length, remote: [...doc.querySelectorAll('[href],[src]')].some(element => /https?:/.test(element.getAttribute('href') || element.getAttribute('src'))), csp: doc.querySelector('meta[http-equiv]').content, expansionRejected};
       }, new URL('app.js', assetBase).href);
       check('Preview isolation strips active elements, remote navigation and submission URLs', isolation.scripts === 0 && !isolation.remote && isolation.csp.includes("connect-src 'none'"));
