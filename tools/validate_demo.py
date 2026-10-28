@@ -22,7 +22,7 @@ from pypdf import PdfReader
 
 
 class DemoValidation:
-    HTML_REVISION = 'ca0e6da0c28cd79933c9006bbf4b9d942d933e78'
+    HTML_REVISION = 'c82bf04fd7a920e16abfd2eca19918176375a734'
     SIGNATURE_HASH = '8b55dfe5e157d024d88703c4cd761f0bb77dfd94178536d5f6f06ea09f1bd10e'
     CERTIFICATE_HASH = '61ecaec8b4fc69746718148aedaec21ee853c583a8e5e05967dd494dc54ed1d6'
     CASES = {'structure', 'table-listes', 'mathml', 'formulaire-reset', 'apparences', 'graphique', 'signature', 'jpeg', 'jpeg2000', 'jbig2'}
@@ -265,7 +265,7 @@ class DemoValidation:
         gallery = gallery_path.parent
         manifest = json.loads(gallery_path.read_text())
         self.check(manifest['schemaVersion'] == 1 and manifest['generator']['package'] == 'pdftoolkit/pdf-to-html-demo', 'gallery schema and package')
-        self.check(manifest['htmlPackage'] == application['htmlPackage'] == {'version': '0.6.0', 'revision': self.HTML_REVISION}, 'exact released HTML package identity')
+        self.check(manifest['htmlPackage'] == application['htmlPackage'] == {'version': '0.7.0', 'revision': self.HTML_REVISION}, 'exact released HTML package identity')
         self.check(manifest['generator']['version'] == application['application']['version'] and manifest['generator']['commit'] == application['application']['revision'], 'application and gallery provenance agree')
         draft = manifest.get('draft', False)
         self.check(draft == application['application']['draft'], 'consistent draft status')
@@ -290,7 +290,7 @@ class DemoValidation:
             if provenance['kind'] == 'generated':
                 self.check(all(provenance[key] == manifest['generator'][key] for key in ('package', 'version', 'commit')), case['id'] + ': generated source provenance')
             else:
-                self.check(case['id'] == 'signature' and provenance == {'kind': 'published-fixture', 'package': 'pdftoolkit/pdf-to-html', 'version': '0.6.0', 'commit': self.HTML_REVISION, 'path': 'tests/Fixtures/signatures/signed-padded.pdf'}, 'signature source provenance')
+                self.check(case['id'] == 'signature' and provenance == {'kind': 'published-fixture', 'package': 'pdftoolkit/pdf-to-html', 'version': '0.7.0', 'commit': self.HTML_REVISION, 'path': 'tests/Fixtures/signatures/signed-padded.pdf'}, 'signature source provenance')
             preview = case['files'].get('htmlPreview')
             self.check(isinstance(preview, dict) and preview.get('path') == case['id'] + '/html-preview.png' and preview.get('mediaType') == 'image/png', case['id'] + ': actual HTML browser preview is present')
             with Image.open(self.path(gallery, preview['path'])) as screenshot:

@@ -7,7 +7,7 @@ de vrais PDF avec leur HTML sémantique, interagir avec les résultats et conver
 votre propre PDF balisé sans l’envoyer à un serveur.
 
 L’application utilise la version publiée, sans modification, de
-[`pdftoolkit/pdf-to-html` 0.6.0](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.6.0),
+[`pdftoolkit/pdf-to-html` 0.7.0](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.7.0),
 avec ses dépendances Reader et core verrouillées. Un nouveau Worker PHP 8.3
 WebAssembly par conversion exécute les mêmes objets PHP qu’une application native.
 Le moteur doit déclarer des entiers 64 bits et les extensions DOM, mbstring, zlib
@@ -75,7 +75,7 @@ composer install --no-dev
 npm ci --ignore-scripts
 node node_modules/playwright/cli.js install --with-deps chromium firefox
 mkdir -p _build
-git clone --branch v0.6.0 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
+git clone --branch v0.7.0 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
 python3 tools/build_demo.py --output dist --html-source _build/html-source --draft
 python3 -m http.server 8080 --directory dist
 ```

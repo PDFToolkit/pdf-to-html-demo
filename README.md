@@ -7,7 +7,7 @@ PDFs with their semantic HTML, interact with the results, and convert your own
 tagged PDF without sending it to a server.
 
 The application uses the unmodified, released
-[`pdftoolkit/pdf-to-html` 0.6.0](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.6.0)
+[`pdftoolkit/pdf-to-html` 0.7.0](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.7.0)
 with its locked Reader and core dependencies. A fresh PHP 8.3 WebAssembly Worker
 per conversion runs the same PHP objects used by a native application. The
 runtime must report 64-bit integers and DOM, mbstring, zlib and ZIP support.
@@ -69,7 +69,7 @@ composer install --no-dev
 npm ci --ignore-scripts
 node node_modules/playwright/cli.js install --with-deps chromium firefox
 mkdir -p _build
-git clone --branch v0.6.0 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
+git clone --branch v0.7.0 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
 python3 tools/build_demo.py --output dist --html-source _build/html-source --draft
 python3 -m http.server 8080 --directory dist
 ```

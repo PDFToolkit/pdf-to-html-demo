@@ -9,9 +9,19 @@
     "ext-dom": "*",
     "ext-mbstring": "*",
     "ext-zlib": "*",
-    "pdftoolkit/pdf-to-html": "0.6.0"
+    "pdftoolkit/pdf-to-html": "0.7.0",
+    "pdftoolkit/pdf-codecs": "0.1.0"
   },
-  "autoload": {"psr-4": {"PDFToolkit\\Demo\\": "src/"}},
-  "config": {"platform": {"php": "8.3.0"}, "sort-packages": true},
+  "autoload": {
+    "psr-4": {
+      "PDFToolkit\\Demo\\": "src/"
+    }
+  },
+  "config": {
+    "platform": {
+      "php": "8.3.0"
+    },
+    "sort-packages": true
+  },
   "minimum-stability": "stable"
 }

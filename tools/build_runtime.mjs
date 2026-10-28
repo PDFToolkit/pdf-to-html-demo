@@ -14,12 +14,13 @@ const assets = path.join(output, 'assets');
 await fs.mkdir(assets, { recursive: true });
 const lock = JSON.parse(await fs.readFile(path.join(root, 'composer.lock'), 'utf8'));
 const expectedReferences = {
-    'pdftoolkit/pdf-to-html': 'ca0e6da0c28cd79933c9006bbf4b9d942d933e78',
-    'pdftoolkit/pdf-reader': 'c623665d2a54013fe937d10203322c27a8096094',
-    'roukmoute/pdf': '25b426190b1c2b8d9d26a3fbf94f71c8014725b3',
+    'pdftoolkit/pdf-codecs': '1f82ae19d6dd874c574a5601d37f3ac63e0d4170',
+    'pdftoolkit/pdf-to-html': 'c82bf04fd7a920e16abfd2eca19918176375a734',
+    'pdftoolkit/pdf-reader': '8f0a1a447da7812f515ac9c307f8431531d29655',
+    'roukmoute/pdf': 'ea9ae2c134bbaf5fc3a22dbc7c81ff8e7b29a6cc',
 };
 const installed = JSON.parse(await fs.readFile(path.join(root, 'vendor/composer/installed.json'), 'utf8'));
-if (installed.dev || installed.packages.length !== 3 || lock.packages.length !== 3 || lock['packages-dev'].length) {
+if (installed.dev || installed.packages.length !== 4 || lock.packages.length !== 4 || lock['packages-dev'].length) {
     throw new Error('Install exactly the production Composer dependencies with --no-dev.');
 }
 for (const pkg of lock.packages) {

@@ -2,6 +2,27 @@
 
 [English](CHANGELOG.md) · [Français](CHANGELOG.fr.md)
 
+## Unreleased
+
+## 0.2.0 — 2026-10-28
+
+- Use released HTML 0.7, Reader 0.7, core 0.12.1 and optional PHP Codecs 0.1,
+  retaining all four exact source/distribution identities in the runtime manifest.
+- Add JPEG, JPEG 2000 and JBIG2 examples to the bilingual gallery, including
+  original PDF sources, derived PNG assets, component provenance and independent
+  pixel comparisons. The gallery now contains ten real conversions.
+- Decode supported images entirely in PHP in browser Workers, using the same
+  explicit Reader configuration for gallery builds and imported PDFs. Preserve
+  the source bytes and explicit diagnostics for profiles outside the bounded
+  browser conversion policy.
+- Bound codecs to four components, one million pixels, twenty million work units
+  and 64 MiB codec memory within the existing 128 MiB Worker limit. Cancellation
+  terminates the Worker; imports remain local and are never persisted.
+- Verify all three image imports, HTML/asset ZIP bytes and native-PHP/WebAssembly
+  output in Chromium and Firefox, alongside the existing privacy, hostile-input,
+  cancellation, keyboard and mobile checks. Retain PDF.js/Apache attribution in
+  both the runtime and downloadable archives.
+
 ## 0.1.0 — 2026-10-28
 
 First release of the standalone PDFToolkit PDF-to-HTML demonstration.
