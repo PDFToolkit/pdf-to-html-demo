@@ -1,0 +1,236 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "d913bb9ae1f6c8b55b612749ac29133b",
+    "packages": [
+        {
+            "name": "pdftoolkit/pdf-reader",
+            "version": "v0.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/PDFToolkit/pdf-reader.git",
+                "reference": "c623665d2a54013fe937d10203322c27a8096094"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/PDFToolkit/pdf-reader/zipball/c623665d2a54013fe937d10203322c27a8096094",
+                "reference": "c623665d2a54013fe937d10203322c27a8096094",
+                "shasum": ""
+            },
+            "require": {
+                "ext-ctype": "*",
+                "ext-zlib": "*",
+                "php": "^8.3",
+                "roukmoute/pdf": "^0.9 || ^0.10 || ^0.11"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.0",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^12.0"
+            },
+            "suggest": {
+                "ext-openssl": "Required when explicitly selecting native AES or OpenSSL certificate authentication."
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.6.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PDF\\Reading\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mathias STRASSER",
+                    "email": "contact@roukmoute.fr"
+                }
+            ],
+            "description": "A bounded PDF object reader with password, certificate and source PDF MAC authentication for PHP 8.3+",
+            "homepage": "https://pdftoolkit.github.io/modules/reader/",
+            "keywords": [
+                "iso-32000-1",
+                "object-model",
+                "pdf",
+                "pdf-1.7",
+                "pdf-2.0",
+                "php",
+                "reader"
+            ],
+            "support": {
+                "docs": "https://pdftoolkit.github.io/modules/reader/",
+                "issues": "https://github.com/PDFToolkit/pdf-reader/issues",
+                "source": "https://github.com/PDFToolkit/pdf-reader"
+            },
+            "time": "2026-10-15T18:44:59+00:00"
+        },
+        {
+            "name": "pdftoolkit/pdf-to-html",
+            "version": "v0.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/PDFToolkit/pdf-to-html.git",
+                "reference": "ca0e6da0c28cd79933c9006bbf4b9d942d933e78"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/PDFToolkit/pdf-to-html/zipball/ca0e6da0c28cd79933c9006bbf4b9d942d933e78",
+                "reference": "ca0e6da0c28cd79933c9006bbf4b9d942d933e78",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-mbstring": "*",
+                "pdftoolkit/pdf-reader": "^0.6",
+                "php": "^8.3",
+                "php-64bit": "*",
+                "roukmoute/pdf": "^0.9 || ^0.10 || ^0.11"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.0",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^12.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.6.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PDF\\Html\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mathias STRASSER",
+                    "email": "contact@roukmoute.fr"
+                }
+            ],
+            "description": "Semantic HTML from tagged PDF with explicit objects, source PDF MAC policy and authenticated permissions for PHP 8.3+",
+            "homepage": "https://pdftoolkit.github.io/modules/to-html/",
+            "keywords": [
+                "accessibility",
+                "derivation",
+                "html",
+                "pdf",
+                "pdf-2.0",
+                "tagged-pdf"
+            ],
+            "support": {
+                "docs": "https://pdftoolkit.github.io/modules/to-html/",
+                "issues": "https://github.com/PDFToolkit/pdf-to-html/issues",
+                "source": "https://github.com/PDFToolkit/pdf-to-html"
+            },
+            "time": "2026-10-28T14:48:44+00:00"
+        },
+        {
+            "name": "roukmoute/pdf",
+            "version": "v0.11.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/PDFToolkit/pdf.git",
+                "reference": "25b426190b1c2b8d9d26a3fbf94f71c8014725b3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/PDFToolkit/pdf/zipball/25b426190b1c2b8d9d26a3fbf94f71c8014725b3",
+                "reference": "25b426190b1c2b8d9d26a3fbf94f71c8014725b3",
+                "shasum": ""
+            },
+            "require": {
+                "ext-ctype": "*",
+                "ext-iconv": "*",
+                "ext-zlib": "*",
+                "php": "^8.3",
+                "php-64bit": "*"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.0",
+                "pdftoolkit/pdf-fonts": "^0.1.12",
+                "pdftoolkit/pdf-images": "^0.1.12",
+                "pdftoolkit/pdf-reader": "^0.6",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^12.0"
+            },
+            "suggest": {
+                "ext-dom": "Required only for the explicitly selected WtPdfXmlRichTextParser backend.",
+                "ext-openssl": "Required only for explicitly selected AES and CMS encryption or signature backends."
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.11.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PDF\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mathias STRASSER",
+                    "email": "contact@roukmoute.fr"
+                }
+            ],
+            "description": "Explicit PDF 1.7/2.0 objects and writing with executable specification rules, conservative redaction, signatures, encryption and tagged-structure validation",
+            "homepage": "https://pdftoolkit.github.io/modules/core/",
+            "keywords": [
+                "AES-GCM",
+                "iso-32000-1",
+                "iso-32000-2",
+                "object-model",
+                "pdf",
+                "pdf-1.7",
+                "pdf-2.0",
+                "pdf-mac",
+                "php",
+                "tagged-pdf",
+                "xmp"
+            ],
+            "support": {
+                "docs": "https://pdftoolkit.github.io/modules/core/",
+                "issues": "https://github.com/PDFToolkit/pdf/issues",
+                "source": "https://github.com/PDFToolkit/pdf"
+            },
+            "time": "2026-10-15T21:35:13+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {},
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": "^8.3",
+        "php-64bit": "*",
+        "ext-dom": "*",
+        "ext-mbstring": "*",
+        "ext-zlib": "*"
+    },
+    "platform-dev": {},
+    "platform-overrides": {
+        "php": "8.3.0"
+    },
+    "plugin-api-version": "2.6.0"
+}

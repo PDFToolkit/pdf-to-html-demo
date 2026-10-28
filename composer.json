@@ -1,0 +1,17 @@
+{
+  "name": "pdftoolkit/pdf-to-html-demo",
+  "description": "Static browser demonstration of PDFToolkit tagged PDF derivation",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": "^8.3",
+    "php-64bit": "*",
+    "ext-dom": "*",
+    "ext-mbstring": "*",
+    "ext-zlib": "*",
+    "pdftoolkit/pdf-to-html": "0.6.0"
+  },
+  "autoload": {"psr-4": {"PDFToolkit\\Demo\\": "src/"}},
+  "config": {"platform": {"php": "8.3.0"}, "sort-packages": true},
+  "minimum-stability": "stable"
+}
