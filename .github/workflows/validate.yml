@@ -1,0 +1,117 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: ctype, dom, iconv, mbstring, zlib, openssl, zip
+          tools: composer:v2
+          coverage: none
+      - run: composer validate --strict
+      - run: composer install --no-dev --no-interaction --prefer-dist
+      - run: composer check-platform-reqs --no-dev
+      - run: composer audit --locked
+      - name: Lint application and executable PHP
+        run: find src bin tests -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Check the native bridge and invalid input boundaries
+        run: |
+          mkdir -p _build/php
+          php tests/conversion.php | tee _build/php/conversion.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: php-${{ matrix.php }}-evidence
+          path: _build/php
+          if-no-files-found: error
+
+  application:
+    name: Static application and both browsers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: app
+      - name: Check out the published converter fixtures independently
+        uses: actions/checkout@v6
+        with:
+          repository: PDFToolkit/pdf-to-html
+          ref: v0.6.0
+          fetch-depth: 0
+          path: html-source
+      - name: Verify the immutable annotated converter release
+        run: |
+          test "$(git -C ../html-source cat-file -t refs/tags/v0.6.0)" = tag
+          test "$(git -C ../html-source rev-parse refs/tags/v0.6.0^{commit})" = ca0e6da0c28cd79933c9006bbf4b9d942d933e78
+          test "$(git -C ../html-source rev-parse HEAD)" = ca0e6da0c28cd79933c9006bbf4b9d942d933e78
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: ctype, dom, iconv, mbstring, zlib, openssl, zip
+          tools: composer:v2
+          coverage: none
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.22.1'
+          package-manager-cache: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - run: composer install --no-dev --no-interaction --prefer-dist
+      - run: composer audit --locked
+      - run: npm ci --ignore-scripts
+      - run: npm audit
+      - name: Install independent PDF and HTML oracles
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes poppler-utils qpdf
+          python -m pip install --require-hashes -r tools/validation-requirements.txt
+      - run: node node_modules/playwright/cli.js install --with-deps chromium firefox
+      - name: Build the exact application revision
+        run: python tools/build_demo.py --revision "$GITHUB_SHA" --output dist --html-source ../html-source
+      - name: Independently verify the generated PDFs, HTML and asset provenance
+        run: python tools/validate_demo.py dist --report _build/validation.json --require-release
+      - name: Verify real conversion and interactions in Chromium and Firefox
+        run: |
+          mkdir -p _build/browser
+          python -m http.server 8080 --bind 127.0.0.1 --directory dist > _build/browser/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:8080/ > /dev/null; then break; fi
+            sleep 0.25
+          done
+          node tests/browser.cjs --base-url http://127.0.0.1:8080/ --output _build/browser
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: application-validation-evidence
+          path: app/_build
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        if: success()
+        with:
+          name: static-application
+          path: app/dist
+          if-no-files-found: error
