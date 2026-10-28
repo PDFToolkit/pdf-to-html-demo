@@ -34,6 +34,16 @@ et des sorties/ressources bornées. Les PDF malformés, chiffrés, non balisés 
 pris en charge reçoivent un message explicite. Le profil ne déduit pas la structure,
 ne fait pas d’OCR et ne reproduit pas la mise en page.
 
+Les flux JPEG, JPEG 2000 et JBIG2 peuvent être décodés par les codecs PHP
+embarqués, en exécution native comme dans WebAssembly. `ReaderFactory` choisit
+explicitement le moteur PHP ; l’import ne lance aucun processus natif et ne
+sollicite aucun serveur pour décoder une image. Le décodage est limité à
+1 048 576 pixels, 4 096 pixels par dimension, quatre composantes, 20 millions
+unités de travail et 64 Mio de mémoire comptabilisée pour les codecs, dans les
+limites globales du Worker. Le consommateur HTML exige toujours un espace
+colorimétrique, une profondeur et une grille représentables ; les sémantiques
+image non prises en charge restent signalées. Cela n’ajoute pas de rendu de page.
+
 Les scripts PDF et ressources distantes sont désactivés. Le résultat apparaît
 dans une iframe isolée ; ses liens ne peuvent pas charger de destination distante.
 Seul l’exemple de réinitialisation sélectionné active le runtime de formulaire de
@@ -86,7 +96,7 @@ provenance des packages. `assets/runtime-manifest.json` conserve les versions
 Composer/npm et du moteur. Une sortie de travail ne peut pas devenir une source
 de documentation publiée.
 
-Le build capture sept aperçus HTML dans la véritable application, avec
+Le build capture dix aperçus HTML dans la véritable application, avec
 `?sample=<id>` et son iframe de résultat isolée. Il attend les polices et images,
 puis capture le body de l’iframe sans modifier le document dérivé. Poppler rend
 séparément les aperçus PDF originaux. Chaque entrée `files.htmlPreview` consigne
@@ -104,6 +114,7 @@ ressources statiques vérifiées ; elles n’exécutent pas PHP sur le serveur.
 
 ```sh
 php tests/conversion.php
+php tests/image-conversion.php
 python3 -m venv _build/validation-venv
 _build/validation-venv/bin/python -m pip install --require-hashes -r tools/validation-requirements.txt
 _build/validation-venv/bin/python tools/validate_demo.py dist --report _build/validation.json

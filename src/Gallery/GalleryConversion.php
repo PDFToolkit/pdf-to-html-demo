@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PDFToolkit\Demo\Gallery;
 
+use PDFToolkit\Demo\Conversion\ReaderFactory;
 use PDF\Html\DerivationPolicy;
 use PDF\Html\DerivationResult;
 use PDF\Html\Forms\FormActionPolicy;
@@ -39,6 +40,6 @@ final readonly class GalleryConversion
             : null;
         $deriver = new HtmlDeriver(policy: $policy, renderer: $case->profile === 'rendering' ? new RasterContentRenderer($this->rasterizer) : null);
         $source = new ReadPdfSource(policy: $policy, structureValidation: StructureValidationMode::Strict, signatureValidation: $signature);
-        return (new PdfToHtml(source: $source, deriver: $deriver))->convert(new FileBytes($case->pdf), $case->id . '.pdf');
+        return (new PdfToHtml(reader: (new ReaderFactory())->create(), source: $source, deriver: $deriver))->convert(new FileBytes($case->pdf), $case->id . '.pdf');
     }
 }

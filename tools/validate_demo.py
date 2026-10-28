@@ -17,7 +17,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 import html5lib
-from PIL import Image, ImageStat
+from PIL import Image, ImageStat, ImageChops
 from pypdf import PdfReader
 
 
@@ -25,7 +25,7 @@ class DemoValidation:
     HTML_REVISION = 'ca0e6da0c28cd79933c9006bbf4b9d942d933e78'
     SIGNATURE_HASH = '8b55dfe5e157d024d88703c4cd761f0bb77dfd94178536d5f6f06ea09f1bd10e'
     CERTIFICATE_HASH = '61ecaec8b4fc69746718148aedaec21ee853c583a8e5e05967dd494dc54ed1d6'
-    CASES = {'structure', 'table-listes', 'mathml', 'formulaire-reset', 'apparences', 'graphique', 'signature'}
+    CASES = {'structure', 'table-listes', 'mathml', 'formulaire-reset', 'apparences', 'graphique', 'signature', 'jpeg', 'jpeg2000', 'jbig2'}
 
     def __init__(self, args):
         self.args = args
@@ -217,6 +217,8 @@ class DemoValidation:
             figure = next(node for node in elements if node['/S'] == '/Figure')
             self.check('Research 72' in figure['/Alt'] and '/BBox' in self.attributes(figure, '/Layout'), 'source figure owns its bounds and alternate text')
             self.check(len(self.elements(doc, 'figure')) == 1 and len(self.elements(doc, 'img')) == 1 and 'surrounding explanation remains selectable' in text, 'complete graphic isolated while prose remains HTML')
+        elif case_id in {'jpeg', 'jpeg2000', 'jbig2'}:
+            self.image_samples(case, doc, reader, gallery)
         elif case_id == 'signature':
             self.check(case['files']['pdf']['sha256'] == self.SIGNATURE_HASH and case['files']['certificate']['sha256'] == self.CERTIFICATE_HASH, 'unchanged published signature fixture and public certificate')
             button = next(node for node in self.elements(doc, 'button') if 'data-pdf-signature-status' in node.attrib)
@@ -224,6 +226,36 @@ class DemoValidation:
             popover = next(node for node in doc.iter() if node.attrib.get('id') == button.attrib.get('popovertarget'))
             self.check(popover.attrib.get('popover') == 'auto' and 'not signed' in ''.join(popover.itertext()), 'signature explanation is a native popover with HTML caveat')
         self.report['cases'].append({'id': case_id, 'profile': case['profile'], 'sourceSha256': case['files']['pdf']['sha256'], 'htmlSha256': case['files']['html']['sha256'], 'structureRoles': dict(roles), 'pass': True})
+
+    def image_samples(self, case, doc, reader, gallery):
+        expected = case['expected']['image']
+        source = reader.pages[0]['/Resources']['/XObject']['/Example'].get_object()
+        original = self.path(gallery, case['files']['encodedImage']['path']).read_bytes()
+        provenance = json.loads(self.path(gallery, case['files']['imageProvenance']['path']).read_text())
+        self.check(str(source['/Filter']) == '/' + expected['filter'] and source._data == original,
+                   case['id'] + ': source PDF retains the actual advertised compressed bytes')
+        self.check((source['/Width'], source['/Height']) == (expected['width'], expected['height']) == (320, 160),
+                   case['id'] + ': explicit source image dimensions')
+        self.check(list(source.get('/Decode', [])) == (expected.get('pdfDecode') or []),
+                   case['id'] + ': explicit PDF Decode mapping')
+        self.check(provenance['license'] == 'MIT' and provenance['image']['encoded']['sha256'] == self.digest(original),
+                   case['id'] + ': original artwork and encoder provenance')
+        images = self.elements(doc, 'img')
+        self.check(len(images) == 1 and len(case['files']['assets']) == 1,
+                   case['id'] + ': one actual decoded image, with selectable surrounding text')
+        raw = base64.b64decode(images[0].attrib['src'].split(',', 1)[1], validate=True)
+        self.check(raw == self.path(gallery, case['files']['assets'][0]['path']).read_bytes(),
+                   case['id'] + ': displayed and downloadable pixels use identical PNG bytes')
+        reference_path = self.path(gallery, case['files']['referenceImage']['path'])
+        self.check(self.digest(reference_path.read_bytes()) == provenance['image']['expected']['sha256'],
+                   case['id'] + ': independent pixel reference matches retained provenance')
+        with Image.open(io.BytesIO(raw)) as actual, Image.open(reference_path) as reference:
+            self.check(actual.size == reference.size == (320, 160), case['id'] + ': decoded native pixel dimensions')
+            difference = ImageChops.difference(actual.convert('RGB'), reference.convert('RGB'))
+            maximum = max(upper for lower, upper in difference.getextrema())
+            tolerance = 3 if case['id'] == 'jpeg' else 0
+            self.check(expected['maximumPixelError'] == tolerance and maximum <= tolerance,
+                       case['id'] + ': independent decoded pixel comparison', {'maximumError': maximum, 'allowed': tolerance})
 
     def run(self):
         application = json.loads((self.root / 'demo-manifest.json').read_text())
@@ -245,7 +277,7 @@ class DemoValidation:
         self.check(640 <= browser_preview.get('viewportWidth', 0) <= 900 and browser_preview.get('deviceScaleFactor') == 1, 'HTML preview viewport is declared and bounded')
         self.report['browserPreview'] = browser_preview
         assets = self.inventory(gallery, manifest['assets'], {'gallery-manifest.json'})
-        self.check({case['id'] for case in manifest['cases']} == self.CASES and len(manifest['cases']) == 7, 'seven stable gallery cases')
+        self.check({case['id'] for case in manifest['cases']} == self.CASES and len(manifest['cases']) == 10, 'ten stable gallery cases')
         self.report['tools']['poppler'] = self.command([self.args.pdftoppm, '-v']).stderr.decode().splitlines()[0]
         for case in manifest['cases']:
             for key in ('title', 'description', 'observations'):

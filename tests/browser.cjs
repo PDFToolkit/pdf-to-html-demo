@@ -45,7 +45,7 @@ class BrowserChecks {
       const assetBase = new URL(await page.locator('[data-demo-root]').getAttribute('data-demo-base'), en);
       const galleryBase = new URL('gallery/', assetBase);
       const manifest = await (await context.request.get(new URL('gallery-manifest.json', galleryBase).href)).json();
-      check('Seven real PDF examples are available', manifest.cases.length === 7 && await page.locator('.demo-sample').count() === 7);
+      check('Ten real PDF examples are available', manifest.cases.length === 10 && await page.locator('.demo-sample').count() === 10);
       check('No PHP runtime is fetched just to browse the gallery', !requests.some(item => /\.wasm(?:\.gz)?$|application\.zip/.test(item.url)));
       for (const sample of manifest.cases) {
         await page.locator('[data-sample="' + sample.id + '"]').click();
@@ -114,6 +114,7 @@ class BrowserChecks {
       const download = await downloadEvent; const zip = unzipSync(await fs.readFile(await download.path()));
       assert.equal(Buffer.from(zip['document.html']).toString(), expected);
       check('Downloaded ZIP contains exact HTML and explicit diagnostics', !!zip['diagnostics.json']);
+      await this.imageImports(page, context, manifest, galleryBase, requests, check, screenshot, record);
       await page.locator('input[type=file]').setInputFiles({name: 'private-name-never-sent.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\ninvalid')});
       await page.waitForFunction(() => document.querySelector('.demo-status')?.dataset.error === 'true', null, {timeout: 45000});
       check('Malformed input produces an explicit error, with no stale success preview', await page.locator('.demo-workspace iframe').count() === 0);
@@ -156,6 +157,43 @@ class BrowserChecks {
       record.requests = requests.length;
       record.passed = true;
     } finally { await browser.close(); }
+  }
+  async imageImports(page, context, manifest, galleryBase, requests, check, screenshot, record) {
+    record.imageCodecs = [];
+    for (const id of ['jpeg', 'jpeg2000', 'jbig2']) {
+      const sample = manifest.cases.find(item => item.id === id);
+      assert.ok(sample && sample.profile === 'basic' && sample.capabilities.includes('pure-php-image-codecs'));
+      const pdf = await (await context.request.get(new URL(sample.files.pdf.path, galleryBase).href)).body();
+      const html = await (await context.request.get(new URL(sample.files.html.path, galleryBase).href)).text();
+      const requestStart = requests.length;
+      await page.locator('input[type=file]').setInputFiles({name: id + '.pdf', mimeType: 'application/pdf', buffer: pdf});
+      await page.waitForFunction(() => document.querySelector('.demo-status')?.textContent.includes('Conversion complete'), null, {timeout: 45000});
+      await page.getByRole('tab', {name: 'HTML code', exact: true}).click();
+      assert.equal(await page.locator('.demo-code').textContent(), html);
+      check(id + ': real WebAssembly decoding produces byte-identical native HTML');
+      const event = page.waitForEvent('download');
+      await page.getByRole('button', {name: 'Download HTML + assets', exact: true}).click();
+      const download = await event;
+      const zip = unzipSync(await fs.readFile(await download.path()));
+      assert.equal(Buffer.from(zip['document.html']).toString(), html);
+      const hashes = [];
+      for (const asset of sample.files.assets) {
+        const expected = await (await context.request.get(new URL(asset.path, galleryBase).href)).body();
+        const filename = asset.path.split('/').at(-1);
+        assert.deepEqual(Buffer.from(zip[filename]), expected);
+        hashes.push({filename, sha256: crypto.createHash('sha256').update(expected).digest('hex')});
+      }
+      check(id + ': downloaded PNG assets exactly match the independent native conversion');
+      await page.getByRole('tab', {name: 'HTML result', exact: true}).click();
+      const frame = page.frameLocator('iframe[title="Derived HTML"]');
+      const pixels = await frame.locator('img').evaluate(async image => {
+        await image.decode(); return {width: image.naturalWidth, height: image.naturalHeight};
+      });
+      check(id + ': browser displays the native 320 by 160 decoded pixels', pixels.width === 320 && pixels.height === 160);
+      check(id + ': no source bytes or filenames leave the page', requests.slice(requestStart).every(request => request.method === 'GET' && !request.body && new URL(request.url).origin === this.base.origin && !request.url.includes(id + '.pdf')));
+      await screenshot('wasm-' + id);
+      record.imageCodecs.push({id, nativeHtmlSha256: crypto.createHash('sha256').update(html).digest('hex'), assets: hashes, passed: true});
+    }
   }
   async raceChecks(context, url, assetBase, pdf, check) {
     const page = await context.newPage();

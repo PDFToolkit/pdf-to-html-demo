@@ -12,11 +12,9 @@ use PDF\Html\PdfToHtml;
 use PDF\Html\Reading\ReadPdfSource;
 use PDF\Html\Reading\ReadingException;
 use PDF\Html\Reading\ReadingLimits;
-use PDF\Reading\DocumentReader;
 use PDF\Reading\EncryptedPdfException;
 use PDF\Reading\FileBytes;
 use PDF\Reading\ParseException;
-use PDF\Reading\ReaderLimits;
 use PDF\Reading\UnsupportedPdfFeature;
 
 /** Every conversion owns fresh, bounded parser and derivation state. No I/O occurs here. */
@@ -26,20 +24,6 @@ final readonly class Converter
     {
         $policy = new DerivationPolicy();
         $limits = new DerivationLimits(maximumNodes: 20000, maximumDepth: 64, maximumOutputBytes: 8 * 1024 * 1024, maximumAssetBytes: 8 * 1024 * 1024);
-        $readerLimits = new ReaderLimits(
-            maxFileBytes: ConversionInput::MAXIMUM_BYTES,
-            maxDepth: 64,
-            maxTokenBytes: 1024 * 1024,
-            maxContainerEntries: 30000,
-            maxObjects: 30000,
-            maxCrossReferenceEntries: 60000,
-            maxRevisions: 16,
-            maxDecodedStreamBytes: 16 * 1024 * 1024,
-            maxTotalDecodedBytes: 32 * 1024 * 1024,
-            maxFilters: 8,
-            maxParsedValues: 150000,
-            maxRetainedBytes: 32 * 1024 * 1024,
-        );
         $sourceLimits = new ReadingLimits(
             maximumDepth: 64,
             maximumNodes: 30000,
@@ -51,7 +35,7 @@ final readonly class Converter
             maximumPages: 100,
         );
         $converter = new PdfToHtml(
-            reader: new DocumentReader($readerLimits),
+            reader: (new ReaderFactory())->create(),
             source: new ReadPdfSource(limits: $sourceLimits, policy: $policy, derivationLimits: $limits),
             deriver: new HtmlDeriver($policy, $limits),
         );

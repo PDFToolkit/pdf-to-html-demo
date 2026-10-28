@@ -104,7 +104,7 @@ final readonly class PdfScene
     }
 
     /** @param list<PdfNode> $children */
-    public function build(string $title, array $children): string
+    public function build(string $title, array $children, ?ResourceDictionary $resources = null): string
     {
         $rootNode = new PdfNode('Document', children: $children, attributes: [$this->css(['font-family' => 'Arial, sans-serif', 'font-size' => '16px', 'max-width' => '720px', 'margin' => '0 auto', 'padding' => '28px', 'color' => '#1e2e46'])]);
         $indexes = new \SplObjectStorage();
@@ -115,7 +115,7 @@ final readonly class PdfScene
         if ($widgets !== []) {
             $entries[] = new Entry(new NameType('Annots'), new ArrayType(...array_map(static fn (DictionaryType $widget): IndirectReference => new IndirectReference($widget), $widgets)));
         }
-        $page = new PageObject($this->rectangle(0, 0, 612, 792), $this->resources, new StreamObject(new ContentStreams(...$operators)), ...$entries);
+        $page = new PageObject($this->rectangle(0, 0, 612, 792), $resources ?? $this->resources, new StreamObject(new ContentStreams(...$operators)), ...$entries);
         $pages = (new PageTreeNode())->addKid($page);
         $tree = new StructureTreeRoot($pages);
         $container = new MarkedContentContainer($page, new IntegerType(0));

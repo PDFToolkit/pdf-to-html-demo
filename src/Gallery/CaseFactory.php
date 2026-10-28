@@ -23,7 +23,7 @@ final readonly class CaseFactory
     }
 
     /** @return list<GalleryCase> */
-    public function all(?string $signaturePdf = null, ?string $certificateDer = null): array
+    public function all(?string $signaturePdf = null, ?string $certificateDer = null, array $images = []): array
     {
         $cases = [$this->structure(), $this->table(), $this->math(), $this->form(), $this->appearances(), $this->graphics()];
         if ($signaturePdf !== null && $certificateDer !== null) {
@@ -39,6 +39,9 @@ final readonly class CaseFactory
                 $certificateDer,
                 'tests/Fixtures/signatures/signed-padded.pdf'
             );
+        }
+        foreach ($images as $image) {
+            $cases[] = (new ImageCaseFactory($this->scene))->create($image);
         }
         return $cases;
     }

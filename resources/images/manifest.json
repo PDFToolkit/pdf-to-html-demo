@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "license": "MIT",
+  "artwork": "Original PDFToolkit geometric illustration; no third-party image or document.",
+  "generator": "tools/generate_image_examples.py",
+  "tools": {
+    "Pillow": "13.0.0",
+    "libjpeg": "6.2",
+    "OpenJPEG": "2.5.4",
+    "libtiff": "4.7.2"
+  },
+  "cases": [
+    {
+      "id": "jpeg",
+      "width": 320,
+      "height": 160,
+      "filter": "DCTDecode",
+      "encoded": {
+        "path": "jpeg.jpg",
+        "bytes": 14752,
+        "sha256": "29643d6de1c382541f3459f2adb306435fd11b9f43c85bb59391fc7e9e689c05"
+      },
+      "expected": {
+        "path": "jpeg-expected.png",
+        "bytes": 21538,
+        "sha256": "19b2033d453543e951ae07ddbc41699c7046353e4df4a77604e0de6418e5944c"
+      },
+      "maximumPixelError": 3,
+      "pdfDecode": [
+        1,
+        0,
+        1,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "jpeg2000",
+      "width": 320,
+      "height": 160,
+      "filter": "JPXDecode",
+      "encoded": {
+        "path": "jpeg2000.jp2",
+        "bytes": 20853,
+        "sha256": "d3c094591bc8ae89ad2525d53b9dc7fbfa652a12347ad02b48d19d5dd398d8a4"
+      },
+      "expected": {
+        "path": "original-rgb.png",
+        "bytes": 4246,
+        "sha256": "976644a3c88e5d92f4326831309156c67cad3e0d9a6bbda8ecb1cdf264ff2954"
+      },
+      "maximumPixelError": 0,
+      "pdfDecode": null
+    },
+    {
+      "id": "jbig2",
+      "width": 320,
+      "height": 160,
+      "filter": "JBIG2Decode",
+      "encoded": {
+        "path": "jbig2.jb2",
+        "bytes": 638,
+        "sha256": "2d2db8514eab6beeaba86c1d1e03f4dc30b6421b34ce86dcc873994ff8331e27"
+      },
+      "expected": {
+        "path": "original-bilevel.png",
+        "bytes": 796,
+        "sha256": "f66d87eff7808b7fb9a6feece512dcc9ef6c1959e387ce7ff99e221cbe58703c"
+      },
+      "maximumPixelError": 0,
+      "pdfDecode": null
+    }
+  ]
+}

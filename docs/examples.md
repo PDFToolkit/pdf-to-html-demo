@@ -1,5 +1,7 @@
 # Real PDF examples
 
+[English](examples.md) · [Français](examples.fr.md)
+
 The gallery is built from real PDF bytes and converted with the released
 `pdftoolkit/pdf-to-html` **0.6.0**, revision
 `ca0e6da0c28cd79933c9006bbf4b9d942d933e78`. Its HTML is the exact converter output.
@@ -9,7 +11,8 @@ The application does not write replacement HTML to imitate a conversion.
 content operators, fonts and metrics, a logical structure tree, parent-tree
 associations, attributes, associated files and AcroForm widgets. `PdfScene`
 serializes these objects. The header artwork is explicitly marked `Artifact`.
-The seventh PDF is an unchanged, published signature test fixture.
+An unchanged, published signature test fixture and three image PDFs authored by
+`ImageCaseFactory` bring the gallery to ten cases.
 
 | Case ID | What to inspect | Conversion profile |
 | --- | --- | --- |
@@ -19,7 +22,13 @@ The seventh PDF is an unchanged, published signature test fixture.
 | `formulaire-reset` | Change Name and Language, then reset: Name becomes its PDF default Ada Lovelace; Language is outside the reset selection. | `reset` |
 | `apparences` | A native button with the PDF's normal, rollover and down appearances. | `rendering` |
 | `graphique` | A figure's bars, text and values are rendered together; neighbouring prose remains selectable HTML. | `rendering` |
-| `signature` | Open the native status popover by mouse or keyboard. The original PDF is checked against an explicitly chosen public test certificate. | `signature` |
+| `jpeg` | An original JPEG with an explicit PDF Decode inversion, actually decoded into PNG by PHP. | `basic` |
+| `jpeg2000` | The original RGB illustration, encoded losslessly as JP2 and decoded into PNG by PHP. | `basic` |
+| `jbig2` | A lossless monochrome illustration in a genuine JBIG2 generic MMR region. | `basic` |
+| `signature` | Open the native status popover by mouse or keyboard. The original PDF is checked against an explicitly chosen public test certificate. | `jpeg` | An original JPEG with an explicit PDF Decode inversion, actually decoded into PNG by PHP. | `basic` |
+| `jpeg2000` | The original RGB illustration, encoded losslessly as JP2 and decoded into PNG by PHP. | `basic` |
+| `jbig2` | A lossless monochrome illustration in a genuine JBIG2 generic MMR region. | `basic` |
+| `signature` |
 
 The explanatory interface is bilingual. These authored PDF samples use English
 ASCII text and Helvetica with explicit font metrics; they do not demonstrate all
@@ -30,8 +39,8 @@ alternative text are demonstrators, not an accessibility certification.
 
 `basic` uses the library's safe default derivation policy, with strict validation
 of the source structure for the gallery build. It does not enable source PDF
-ECMAScript or remote resources. These three PDFs are also the main comparison
-corpus for native PHP and the browser's WebAssembly conversion.
+ECMAScript or remote resources. The basic PDFs, including all three image cases,
+are compared between native PHP and the browser's WebAssembly conversion.
 
 `reset` adds only `FormActionPolicy(allowReset: true)`. The converter emits a
 library-owned `pdf-script-<sha256>.js` asset with media type `text/javascript`.
@@ -62,6 +71,30 @@ those explicitly enabled capabilities. A PDF imported from a gallery card can
 therefore differ from that card's preconverted result when its profile is not
 `basic`.
 
+## Image inputs and pixel evidence
+
+`tools/generate_image_examples.py` creates an original 320 × 160 illustration
+and encodes it with Pillow, libjpeg, OpenJPEG and libtiff. Versions, input hashes
+and reference PNGs are retained under `resources/images/`; no third-party photo
+or normative test picture is used. The gallery embeds the exact compressed
+bytes in native PDF image objects. These tools run only when regenerating the
+retained inputs, never in the browser or during ordinary gallery builds.
+
+The JPEG input stores inverted colours and the PDF supplies `/Decode [1 0 1 0
+1 0]`. This forces actual PHP decoding instead of the converter's compatible
+JPEG passthrough. Its reference is independently decoded by libjpeg and inverted
+according to that PDF mapping. The observed allowed difference for this example
+is at most three levels per eight-bit channel; JPEG is not lossless. JP2 and
+JBIG2 are compared exactly to the original pixels. This tolerance is specific to
+this fixture, not a universal codec guarantee.
+
+Every image case publishes `encoded-image.bin`, `reference-image.png` and
+`image-provenance.json`, with complete inventory hashes. `validate_demo.py`
+checks the embedded PDF stream, image dimensions, Decode mapping and pixel
+comparison independently with pypdf and Pillow. Chromium and Firefox then import
+the real PDFs through fresh WebAssembly Workers and compare exact HTML and
+PNG assets to native conversion. PNG captures show the real isolated preview.
+
 ## Rebuild
 
 Install the exact Composer lock and provide PHP 8.3 or later with DOM, mbstring,
@@ -77,14 +110,14 @@ php bin/build-gallery.php --output dist/gallery \
 
 `--html-source` identifies the released HTML source checkout containing
 `tests/Fixtures/signatures/`. The builder verifies the exact retained SHA-256
-hashes of the PDF and certificate. The final gallery requires all seven cases.
+hashes of the PDF and certificate. The final gallery requires all ten cases.
 A final build also requires the exact clean Git HEAD of this demo repository;
 `--revision` can be omitted to read it directly. An optional `--pdftoppm` selects
 an explicit local executable.
 
 Before the first commit, use `--draft` instead of `--revision`. Draft manifests
 have `draft: true` and `generator.commit: null`; they are review artifacts and
-must not be published. Without `--html-source`, a draft contains only the six
+must not be published. Without `--html-source`, a draft contains the nine
 authored PDFs. Rebuilding an existing gallery only replaces files whose hashes
 still match its previous manifest; unknown or modified files cause a refusal.
 
@@ -104,6 +137,8 @@ native/WebAssembly equality are separate checks, not inferred by this oracle.
 The process is separated into objects:
 
 - `PdfNode`, `PdfScene`, `CaseFactory`: authoring and sample descriptions.
+- `ImageFixture`, `ImageFixtures`, `ImageCaseFactory`: verified encoded inputs and tagged image pages.
+- `ReaderFactory`: bounded, explicit PHP image decoding shared by gallery and imports.
 - `GalleryConversion`: explicit policies and released converter calls.
 - `PopplerRasterizer`, `ProcessRunner`: bounded local rendering capability.
 - `GalleryBuilder`: files, provenance, hashes and complete manifest publication.

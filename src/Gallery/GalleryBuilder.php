@@ -37,8 +37,8 @@ final readonly class GalleryBuilder
             throw new \InvalidArgumentException('A draft deliberately has no claimed generator commit.');
         }
         [$signature, $certificate] = $this->signature($htmlSource);
-        $cases = (new CaseFactory())->all($signature, $certificate);
-        if (!$draft && count($cases) !== 7) {
+        $cases = (new CaseFactory())->all($signature, $certificate, (new ImageFixtures($this->root . '/resources/images'))->read());
+        if (!$draft && count($cases) !== 10) {
             throw new \RuntimeException('A release gallery requires the published signature fixture via --html-source.');
         }
         $generator = ['package' => 'pdftoolkit/pdf-to-html-demo', 'version' => $version, 'commit' => $revision];
@@ -57,7 +57,7 @@ final readonly class GalleryBuilder
                 $pdf = $this->write($stage, $case->id . '/source.pdf', $case->pdf, 'application/pdf', $inventory);
                 $html = $this->write($stage, $case->id . '/result.html.txt', $result->html, 'text/plain', $inventory);
                 $png = $this->write($stage, $case->id . '/page-1.png', $preview['bytes'], 'image/png', $inventory);
-                $code = $this->write($stage, $case->id . '/example.php.txt', $this->read($this->root . '/src/Gallery/CaseFactory.php'), 'text/plain', $inventory);
+                $code = $this->write($stage, $case->id . '/example.php.txt', $this->read($this->root . ($case->image === null ? '/src/Gallery/CaseFactory.php' : '/src/Gallery/ImageCaseFactory.php')), 'text/plain', $inventory);
                 $assets = [];
                 foreach ($result->assets as $asset) {
                     $assets[] = $this->write($stage, $case->id . '/' . $asset->filename, $asset->bytes, $asset->mediaType, $inventory);
@@ -67,14 +67,24 @@ final readonly class GalleryBuilder
                 if ($case->certificate !== null) {
                     $files['certificate'] = $this->write($stage, $case->id . '/signer.der', $case->certificate, 'application/pkix-cert', $inventory);
                 }
+                if ($case->image !== null) {
+                    $files['encodedImage'] = $this->write($stage, $case->id . '/encoded-image.bin', $case->image->bytes, 'application/octet-stream', $inventory);
+                    $files['referenceImage'] = $this->write($stage, $case->id . '/reference-image.png', $case->image->referencePng, 'image/png', $inventory);
+                    $files['imageProvenance'] = $this->write($stage, $case->id . '/image-provenance.json', $this->json($case->image->provenance), 'application/json', $inventory);
+                }
                 $source = $case->fixturePath === null
-                    ? ['kind' => 'generated', ...$generator, 'path' => 'src/Gallery/CaseFactory.php']
+                    ? ['kind' => 'generated', ...$generator, 'path' => $case->image === null ? 'src/Gallery/CaseFactory.php' : 'src/Gallery/ImageCaseFactory.php']
                     : ['kind' => 'published-fixture', 'package' => 'pdftoolkit/pdf-to-html', 'version' => '0.6.0', 'commit' => self::HTML_REVISION, 'path' => $case->fixturePath];
                 $items[] = ['id' => $case->id, 'title' => $case->title, 'description' => $case->description, 'observations' => $case->observations, 'profile' => $case->profile, 'capabilities' => $case->capabilities, 'source' => $source, 'files' => $files, 'pages' => [[...$png, 'width' => $preview['width'], 'height' => $preview['height']]], 'expected' => $case->expected];
             }
             // The per-case source excerpt is the actual factory. Include its full object/build context once.
             $sources = glob($this->root . '/src/Gallery/*.php') ?: [];
             $sources[] = $this->root . '/bin/build-gallery.php';
+            $sources[] = $this->root . '/tools/generate_image_examples.py';
+            $sources[] = $this->root . '/resources/images/manifest.json';
+            foreach (glob($this->root . '/src/Conversion/*.php') ?: [] as $path) {
+                $sources[] = $path;
+            }
             sort($sources);
             foreach ($sources as $path) {
                 $relative = substr($path, strlen($this->root) + 1);
@@ -124,6 +134,12 @@ final readonly class GalleryBuilder
         }
         if ($case->profile === 'signature' && !str_contains($result->html, 'data-pdf-signature-status="integrity-verified"')) {
             throw new \RuntimeException('The published signature fixture did not verify against its explicit test certificate.');
+        }
+        if ($case->image !== null) {
+            $codes = array_map(static fn (\PDF\Html\Diagnostic $diagnostic): string => $diagnostic->code, $result->diagnostics);
+            if (count($result->assets) !== 1 || $result->assets[0]->mediaType !== 'image/png' || $codes !== ['scripts-disabled']) {
+                throw new \RuntimeException('The image example requires an actual decoded PNG without fallback diagnostics.');
+            }
         }
         if ($case->profile === 'reset') {
             $scripts = array_filter($result->assets, static fn ($asset): bool => $asset->mediaType === 'text/javascript');

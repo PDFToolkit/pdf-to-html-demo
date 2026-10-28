@@ -29,6 +29,7 @@ for (const pkg of lock.packages) {
 }
 const archiveFiles = {};
 const archiveManifest = {};
+const libraryNotices = [];
 async function addFile(relative) {
     if (/(^|\/)(tests?|docs?|fixtures|node_modules)(\/|$)/i.test(relative) || /\.(pem|der|p12|pfx|key|pdf)$/i.test(relative)) throw new Error(`Forbidden application archive path: ${relative}`);
     const source = path.join(root, relative);
@@ -56,9 +57,26 @@ for (const pkg of lock.packages) {
     await addTree(`vendor/${pkg.name}/src`);
     await addFile(`vendor/${pkg.name}/composer.json`);
     const names = await fs.readdir(path.join(root, 'vendor', pkg.name));
-    const licenses = names.filter(name => /^licen[cs]e(?:\.|$)/i.test(name));
-    if (!licenses.length) throw new Error(`Missing license for ${pkg.name}`);
-    for (const name of licenses) await addFile(`vendor/${pkg.name}/${name}`);
+    const licenses = names.filter(name => /^(?:licen[cs]e|notice)(?:\.|$)/i.test(name));
+    if (!names.some(name => /^licen[cs]e(?:\.|$)/i.test(name))) throw new Error(`Missing license for ${pkg.name}`);
+    for (const name of licenses) {
+        const relative = `vendor/${pkg.name}/${name}`;
+        await addFile(relative);
+        libraryNotices.push(relative);
+    }
+    if (pkg.name === 'pdftoolkit/pdf-codecs') {
+        for (const codec of ['arithmetic', 'jpeg', 'jpeg2000', 'jbig2']) {
+            const relative = `vendor/${pkg.name}/resources/${codec}`;
+            const files = await fs.readdir(path.join(root, relative));
+            if (!files.includes('NOTICE') || !files.includes('PDFJS-LICENSE') || !files.includes('provenance.json')) throw new Error(`Missing codec attribution: ${codec}`);
+            for (const filename of files.sort()) {
+                if (!/^(?:NOTICE|[A-Z]+-LICENSE|provenance\.json|upstream\.json)$/.test(filename)) throw new Error(`Unexpected codec attribution file: ${filename}`);
+                const file = `${relative}/${filename}`;
+                await addFile(file);
+                libraryNotices.push(file);
+            }
+        }
+    }
 }
 try { await addFile('LICENSE'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
 const runtime = path.join(assets, 'runtime');
@@ -98,6 +116,11 @@ for (const variant of ['jspi', 'asyncify']) {
 }
 const licenses = path.join(runtime, 'licenses');
 await fs.mkdir(licenses, { recursive: true });
+for (const relative of libraryNotices) {
+    const filename = relative.replaceAll('/', '_');
+    await fs.copyFile(path.join(root, relative), path.join(licenses, filename));
+    await record(`runtime/licenses/${filename}`);
+}
 const npmLock = JSON.parse(await fs.readFile(path.join(root, 'package-lock.json'), 'utf8'));
 for (const [location, pkg] of Object.entries(npmLock.packages)) {
     if (!location || pkg.dev || pkg.optional && location.startsWith('node_modules/@esbuild/')) continue;

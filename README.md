@@ -33,6 +33,15 @@ The browser profile accepts up to 8 MiB and 100 pages, with a 30-second deadline
 Malformed, encrypted, untagged and unsupported PDFs receive explicit messages.
 It does not infer document structure, perform OCR or reproduce page layout.
 
+JPEG, JPEG 2000 and JBIG2 image streams can be decoded by the bundled PHP
+codecs in both native execution and WebAssembly. `ReaderFactory` explicitly
+selects the PHP backend; importing a PDF never starts a native process or asks a
+server to decode it. Image decoding is limited to 1,048,576 pixels, 4,096 pixels
+per dimension, four components, 20 million work units and a 64 MiB accounted
+codec memory budget, within the Worker's overall limits. The HTML consumer still
+requires a representable colour space, depth and sampling grid; unsupported
+image semantics remain explicit diagnostics. This does not add page rendering.
+
 PDF scripts and remote resources are disabled. Results appear in an isolated
 iframe; preview links cannot fetch remote destinations. The curated reset example
 alone enables the library-owned form runtime, without PDF ECMAScript. Its iframe
@@ -79,7 +88,7 @@ PDFs, code, previews, exact HTML, diagnostics, capabilities and package provenan
 `assets/runtime-manifest.json` records the Composer/npm versions and runtime.
 Draft output cannot be used as a published documentation source.
 
-The build captures seven HTML previews through the real application, using
+The build captures ten HTML previews through the real application, using
 `?sample=<id>` and its isolated result iframe. It waits for fonts and images,
 then captures the iframe body without changing the derived document. Poppler
 renders the original PDF previews separately. Each `files.htmlPreview` entry
@@ -96,6 +105,7 @@ the verified static assets; they do not run PHP on the server.
 
 ```sh
 php tests/conversion.php
+php tests/image-conversion.php
 python3 -m venv _build/validation-venv
 _build/validation-venv/bin/python -m pip install --require-hashes -r tools/validation-requirements.txt
 _build/validation-venv/bin/python tools/validate_demo.py dist --report _build/validation.json
