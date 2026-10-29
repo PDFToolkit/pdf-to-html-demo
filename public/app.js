@@ -1,7 +1,9 @@
 const COPY = {
   en: {
     eyebrow: 'PDFToolkit · live demonstration', title: 'From a PDF to a page you can use.',
-    intro: 'Compare real source PDFs with their semantic HTML. Explore the examples, or convert a tagged PDF of your own.',
+    intro: 'Choose an example to compare its PDF with a web page. Or try your own tagged PDF: a PDF that includes a reading order and information about headings, lists and other content.',
+    localHelp: 'Your own PDF is converted on the fly in this browser, without sending it to a server. Gallery examples were converted in advance.',
+    seeResult: 'See the result', backExamples: 'Back to examples', sourcePdf: 'Download source PDF',
     private: 'Your PDF stays in this browser', upload: 'Try your own tagged PDF',
     uploadHelp: 'Drop a PDF here, or choose a file. Up to 8 MiB. No upload, no account.',
     choose: 'Choose a PDF', cancel: 'Cancel', clear: 'Clear my file',
@@ -14,6 +16,10 @@ const COPY = {
     timeout: 'This document exceeded the 30-second limit. Try a smaller or simpler tagged PDF.',
     loadError: 'The example could not be loaded. Reload the page to try again.',
     engineError: 'The local conversion engine could not load or run. Reload the page and check whether your browser blocks WebAssembly or Worker scripts.',
+    runtime_download: 'A file needed by the local converter could not be downloaded. Reload the page and check your connection or content-blocking settings.',
+    runtime_integrity: 'A downloaded converter file did not match the expected version. Reload the page to download it again; the file was not executed.',
+    runtime_initialization: 'The browser could not initialize the local PHP engine. Check whether WebAssembly or Worker scripts are blocked, then reload the page.',
+    library_initialization: 'The local PDF converter could not be prepared. Reload the page to try again.',
     conversionError: 'This PDF could not be converted with the demonstration profile.',
     compare: 'Compare', html: 'HTML result', pdf: 'Source PDF', code: 'HTML code', diagnostics: 'Diagnostics',
     source: 'Source PDF', result: 'Derived HTML', semantic: 'Semantic, reflowable content',
@@ -21,7 +27,7 @@ const COPY = {
     observe: 'What to try', inputLabel: 'Your document', inputDescription: 'Converted now in your browser with the default safe profile.',
     noDiagnostics: 'No diagnostics were reported for this conversion.',
     diagnosticHelp: 'These messages describe omissions, adaptations or unsupported features in this particular conversion.',
-    provenance: 'Reproduce this example', generator: 'View the generating PHP code',
+    provenance: 'Reproduce this example', generator: 'View the generating source code', downloadCode: 'Download source code', latexProvenance: 'Download LaTeX build provenance',
     generated: 'Pre-generated with PDFToolkit', live: 'Converted in your browser',
     version: 'HTML converter', elapsed: 'Conversion time', bytes: 'Source size',
     boundary: 'This converts tagged PDF structure into HTML. It is not OCR or a page-layout replica. PDF scripts and remote resources are disabled for your files; missing graphics capabilities are reported in the diagnostics.',
@@ -32,13 +38,16 @@ const COPY = {
     untagged: 'This PDF has no usable tagged structure. Try a tagged PDF; this demo does not infer reading order or run OCR.',
     encrypted: 'This PDF is encrypted. This browser demo does not ask for credentials; use the documented authentication API in your application.',
     unavailable: 'The conversion was rejected by the configured resource limits or the supported input profile.',
-    codeHelp: 'This is the exact HTML returned by the converter. The preview is isolated; downloads include the original HTML and its assets.',
+    codeHelp: 'The readable view adds colour and visual indentation only. It preserves every character, including spaces in MathML. Copy HTML and downloads always use the original converter output.',
+    readableCode: 'Readable view', originalCode: 'Original source', codeLimit: 'This large source is shown without visual formatting to keep the page responsive.',
     sourceHelp: 'Use Download PDF to open your original file in a PDF reader. The converted content is available in the HTML result tab.', sourceLink: 'Source and reproduction instructions',
     previewLimit: 'This result is too large for the isolated preview. You can still inspect its HTML code and download the original HTML with its assets.',
   },
   fr: {
     eyebrow: 'PDFToolkit · démonstration interactive', title: 'Du PDF à une page que l’on peut utiliser.',
-    intro: 'Comparez de vrais PDF sources avec leur HTML sémantique. Explorez les exemples ou convertissez votre propre PDF balisé.',
+    intro: 'Choisissez un exemple pour comparer son PDF à une page web. Ou essayez votre propre PDF balisé : un PDF contenant un ordre de lecture et des informations sur les titres, listes et autres contenus.',
+    localHelp: 'Votre propre PDF est converti à la demande dans ce navigateur, sans envoi à un serveur. Les exemples de la galerie ont été convertis à l’avance.',
+    seeResult: 'Voir le résultat', backExamples: 'Revenir aux exemples', sourcePdf: 'Télécharger le PDF source',
     private: 'Votre PDF reste dans ce navigateur', upload: 'Essayez votre propre PDF balisé',
     uploadHelp: 'Déposez un PDF ici ou choisissez un fichier. Jusqu’à 8 Mio. Aucun envoi, aucun compte.',
     choose: 'Choisir un PDF', cancel: 'Annuler', clear: 'Effacer mon fichier',
@@ -51,6 +60,10 @@ const COPY = {
     timeout: 'Ce document a dépassé la limite de 30 secondes. Essayez un PDF balisé plus petit ou plus simple.',
     loadError: 'Impossible de charger cet exemple. Rechargez la page pour réessayer.',
     engineError: 'Le moteur de conversion local n’a pas pu se charger ou s’exécuter. Rechargez la page et vérifiez si le navigateur bloque WebAssembly ou les scripts Worker.',
+    runtime_download: 'Un fichier nécessaire au convertisseur local n’a pas pu être téléchargé. Rechargez la page et vérifiez votre connexion ou les paramètres de blocage de contenu.',
+    runtime_integrity: 'Un fichier téléchargé du convertisseur ne correspond pas à la version attendue. Rechargez la page pour le télécharger à nouveau ; ce fichier n’a pas été exécuté.',
+    runtime_initialization: 'Le navigateur n’a pas pu initialiser le moteur PHP local. Vérifiez si WebAssembly ou les scripts Worker sont bloqués, puis rechargez la page.',
+    library_initialization: 'Le convertisseur PDF local n’a pas pu être préparé. Rechargez la page pour réessayer.',
     conversionError: 'Ce PDF n’a pas pu être converti avec le profil de démonstration.',
     compare: 'Comparer', html: 'Résultat HTML', pdf: 'PDF source', code: 'Code HTML', diagnostics: 'Diagnostics',
     source: 'PDF source', result: 'HTML dérivé', semantic: 'Contenu sémantique et adaptable',
@@ -58,7 +71,7 @@ const COPY = {
     observe: 'À essayer', inputLabel: 'Votre document', inputDescription: 'Converti maintenant dans votre navigateur avec le profil sûr par défaut.',
     noDiagnostics: 'Aucun diagnostic signalé pour cette conversion.',
     diagnosticHelp: 'Ces messages décrivent les omissions, adaptations ou fonctions non prises en charge pour cette conversion précise.',
-    provenance: 'Reproduire cet exemple', generator: 'Voir le code PHP de génération',
+    provenance: 'Reproduire cet exemple', generator: 'Voir le code source de génération', downloadCode: 'Télécharger le code source', latexProvenance: 'Télécharger la provenance du build LaTeX',
     generated: 'Pré-généré avec PDFToolkit', live: 'Converti dans votre navigateur',
     version: 'Convertisseur HTML', elapsed: 'Temps de conversion', bytes: 'Taille de la source',
     boundary: 'Le convertisseur transforme la structure d’un PDF balisé en HTML. Il ne fait ni OCR ni reproduction de la mise en page. Les scripts PDF et ressources distantes sont désactivés pour vos fichiers ; les capacités graphiques manquantes sont signalées dans les diagnostics.',
@@ -69,7 +82,8 @@ const COPY = {
     untagged: 'Ce PDF ne possède pas de structure balisée exploitable. Essayez un PDF balisé ; cette démo ne déduit pas l’ordre de lecture et ne fait pas d’OCR.',
     encrypted: 'Ce PDF est chiffré. Cette démo ne demande pas d’identifiants ; utilisez l’API d’authentification documentée dans votre application.',
     unavailable: 'La conversion a été refusée par les limites de ressources ou le profil de fichiers pris en charge.',
-    codeHelp: 'Voici le HTML exact renvoyé par le convertisseur. L’aperçu est isolé ; le téléchargement contient le HTML original et ses ressources.',
+    codeHelp: 'La vue lisible ajoute seulement des couleurs et une indentation visuelle. Elle conserve chaque caractère, y compris les espaces dans MathML. Copier le HTML et les téléchargements utilisent toujours la sortie originale du convertisseur.',
+    readableCode: 'Vue lisible', originalCode: 'Source originale', codeLimit: 'Cette source volumineuse est affichée sans mise en forme visuelle pour préserver la réactivité de la page.',
     sourceHelp: 'Utilisez Télécharger le PDF pour ouvrir votre fichier original dans un lecteur PDF. Le contenu converti est disponible dans l’onglet Résultat HTML.', sourceLink: 'Sources et instructions de reproduction',
     previewLimit: 'Ce résultat est trop volumineux pour l’aperçu isolé. Vous pouvez consulter son code HTML et télécharger le HTML original avec ses ressources.',
   },
@@ -171,45 +185,142 @@ export class PreviewDocument {
   }
 }
 
+/** A source display, never an HTML serializer or a transformation of the result. */
+export class HtmlSourceView {
+  constructor(source, copy) {
+    this.source = source;
+    this.copy = copy;
+    this.mode = 'original';
+    this.voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+  }
+  render() {
+    const container = document.createElement('div');
+    const controls = document.createElement('div'); controls.className = 'demo-inspection demo-code-controls';
+    const help = document.createElement('p'); help.textContent = this.copy.codeHelp;
+    const actions = document.createElement('div'); actions.className = 'demo-actions';
+    this.buttons = new Map();
+    for (const [mode, label] of [['readable', this.copy.readableCode], ['original', this.copy.originalCode]]) {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'demo-button'; button.textContent = label;
+      button.addEventListener('click', () => this.show(mode)); this.buttons.set(mode, button); actions.append(button);
+    }
+    const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'demo-button'; copy.textContent = this.copy.copy;
+    copy.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(this.source); copy.textContent = this.copy.copied; } catch { /* The selectable source remains available. */ }
+    });
+    actions.append(copy);
+    this.notice = document.createElement('p'); this.notice.textContent = this.copy.codeLimit; this.notice.hidden = true;
+    controls.append(help, actions, this.notice);
+    this.code = document.createElement('pre'); this.code.className = 'demo-code'; this.code.tabIndex = 0;
+    this.code.addEventListener('copy', event => {
+      const selection = document.getSelection();
+      if (!event.clipboardData || !selection?.rangeCount || !this.code.contains(selection.anchorNode) || !this.code.contains(selection.focusNode)) return;
+      // Range text does not insert the visual line breaks used by block spans.
+      const ranges = Array.from({length: selection.rangeCount}, (_, index) => selection.getRangeAt(index).toString());
+      event.clipboardData.setData('text/plain', ranges.join('')); event.preventDefault();
+    });
+    container.append(controls, this.code); this.show(this.mode); return container;
+  }
+  show(mode) {
+    this.mode = mode;
+    for (const [name, button] of this.buttons) button.setAttribute('aria-pressed', String(name === mode));
+    this.code.dataset.mode = mode;
+    this.notice.hidden = true;
+    if (mode === 'original') { this.code.textContent = this.source; return; }
+    const fragment = this.formatted();
+    if (fragment === null) { this.code.textContent = this.source; this.notice.hidden = false; }
+    else this.code.replaceChildren(fragment);
+  }
+  formatted() {
+    if (this.source.length > 1024 * 1024) return null;
+    const fragment = document.createDocumentFragment(), stack = [];
+    let offset = 0, count = 0;
+    while (offset < this.source.length) {
+      if (++count > 20000) return null;
+      const end = this.tokenEnd(offset, stack.at(-1));
+      const value = this.source.slice(offset, end);
+      const rawText = ['script', 'style', 'textarea', 'title'].includes(stack.at(-1)) && !new RegExp('^</' + stack.at(-1) + '(?=[\\s>])', 'i').test(value);
+      const tag = rawText ? null : value.match(/^<(\/?)\s*([a-z][a-z0-9:-]*)(?:\s|\/?>)/i);
+      const name = tag?.[2].toLowerCase();
+      if (tag?.[1]) {
+        const index = stack.lastIndexOf(name);
+        if (index >= 0) stack.length = index;
+      }
+      const span = document.createElement('span');
+      span.className = 'demo-source-token ' + (value.startsWith('<!--') ? 'demo-source-comment' : tag || /^<!/.test(value) ? 'demo-source-markup' : 'demo-source-text');
+      span.style.setProperty('--source-depth', String(Math.min(stack.length, 12)));
+      span.textContent = value; fragment.append(span);
+      if (tag && !tag[1] && !this.voidElements.has(name) && !/\/\s*>$/.test(value)) stack.push(name);
+      offset = end;
+    }
+    return fragment;
+  }
+  tokenEnd(offset, parent) {
+    const source = this.source;
+    if (['script', 'style', 'textarea', 'title'].includes(parent)) {
+      const closing = new RegExp('</' + parent + '(?=[\\s>])', 'ig'); closing.lastIndex = offset;
+      const match = closing.exec(source);
+      if (!match) return source.length;
+      if (match.index > offset) return match.index;
+    }
+    for (const [start, finish] of [['<!--', '-->'], ['<![CDATA[', ']]>']]) {
+      if (source.startsWith(start, offset)) {
+        const end = source.indexOf(finish, offset + start.length);
+        return end < 0 ? source.length : end + finish.length;
+      }
+    }
+    if (source[offset] === '<' && /^<(?:\/?[a-z]|!|\?)/i.test(source.slice(offset, offset + 3))) {
+      let quote = null;
+      for (let index = offset + 1; index < source.length; index++) {
+        const character = source[index];
+        if (quote !== null) { if (character === quote) quote = null; }
+        else if (character === '"' || character === "'") quote = character;
+        else if (character === '>') return index + 1;
+      }
+      return source.length;
+    }
+    const next = source.indexOf('<', offset + 1);
+    return next < 0 ? source.length : next;
+  }
+}
+
 export class BrowserConverter {
-  constructor(base, onProgress) {
+  constructor(base, onProgress, workerFactory = url => new Worker(url, {type: 'module'}), identifierFactory = () => crypto.randomUUID()) {
     this.base = base;
     this.onProgress = onProgress;
+    this.workerFactory = workerFactory;
+    this.identifierFactory = identifierFactory;
     this.worker = null;
     this.reject = null;
     this.timer = null;
   }
   cancel() {
-    clearTimeout(this.timer);
-    this.worker?.terminate();
-    this.worker = null;
-    const reject = this.reject;
-    this.reject = null;
-    reject?.(Object.assign(new Error('Cancelled'), {code: 'cancelled'}));
+    this.reject?.(Object.assign(new Error('Cancelled'), {code: 'cancelled'}));
   }
   convert(filename, bytes) {
     this.cancel();
     return new Promise((resolve, reject) => {
-      const id = crypto.randomUUID();
-      this.reject = reject;
-      const worker = new Worker(new URL('assets/conversion-worker.js', this.base), {type: 'module'});
-      this.worker = worker;
+      let worker = null, timer = null, settled = false;
       const finish = (error, result) => {
-        clearTimeout(this.timer);
-        worker.terminate();
-        if (this.worker === worker) { this.worker = null; this.reject = null; }
+        if (settled) return;
+        settled = true; clearTimeout(timer); worker?.terminate();
+        if (this.reject === rejectPending) { this.worker = null; this.reject = null; this.timer = null; }
         if (error) reject(error); else resolve(result);
       };
-      this.timer = setTimeout(() => finish(Object.assign(new Error('Timeout'), {code: 'timeout'})), 30000);
-      worker.onerror = () => finish(Object.assign(new Error('Worker failed'), {code: 'engineError'}));
-      worker.onmessage = ({data}) => {
-        if (!data || data.id !== id) return;
-        if (data.type === 'progress') this.onProgress(data.stage);
-        else if (data.type === 'error') finish(Object.assign(new Error(data.error?.message || 'Conversion failed'), {code: data.error?.code || 'conversionError'}));
-        else if (data.type === 'result') finish(null, data);
-      };
-      const input = bytes.slice().buffer;
-      worker.postMessage({type: 'convert', id, filename, input}, [input]);
+      const rejectPending = error => finish(error); this.reject = rejectPending;
+      try {
+        const id = this.identifierFactory();
+        worker = this.workerFactory(new URL('assets/conversion-worker.js', this.base)); this.worker = worker;
+        timer = setTimeout(() => finish(Object.assign(new Error('Timeout'), {code: 'timeout'})), 30000); this.timer = timer;
+        worker.onerror = worker.onmessageerror = () => finish(Object.assign(new Error('Worker failed'), {code: 'engineError'}));
+        worker.onmessage = ({data}) => {
+          if (settled || !data || data.id !== id) return;
+          if (data.type === 'progress') this.onProgress(data.stage);
+          else if (data.type === 'error') finish(Object.assign(new Error('Conversion failed'), {code: data.error?.code || 'conversionError'}));
+          else if (data.type === 'result') finish(null, data);
+        };
+        const input = bytes.slice().buffer;
+        worker.postMessage({type: 'convert', id, filename, input}, [input]);
+      } catch { finish(Object.assign(new Error('Worker could not start'), {code: 'engineError'})); }
     });
   }
 }
@@ -244,7 +355,10 @@ class DemoApplication {
     this.root.replaceChildren();
     const intro = this.element('div', 'demo-intro');
     const heading = this.element('div');
-    heading.append(this.element('span', 'demo-eyebrow', this.t.eyebrow), this.element('h2', '', this.t.title), this.element('p', '', this.t.intro));
+    this.resultJump = this.button(this.t.seeResult, 'demo-primary demo-result-jump', () => this.showResult());
+    this.resultJump.disabled = true; this.resultJump.setAttribute('aria-controls', 'demo-result');
+    heading.append(this.element('span', 'demo-eyebrow', this.t.eyebrow), this.element('h2', '', this.t.title), this.element('p', '', this.t.intro),
+      this.element('p', 'demo-local-help', this.t.localHelp), this.resultJump);
     intro.append(heading, this.element('span', 'demo-private', '● ' + this.t.private));
     const upload = this.element('div', 'demo-upload');
     const copy = this.element('div', 'demo-upload-copy');
@@ -263,10 +377,11 @@ class DemoApplication {
     upload.addEventListener('dragleave', event => { if (!upload.contains(event.relatedTarget)) upload.dataset.dragging = 'false'; });
     upload.addEventListener('drop', event => { event.preventDefault(); upload.dataset.dragging = 'false'; const file = event.dataTransfer.files[0]; if (file) this.importFile(file); });
     const sampleHeading = this.element('div', 'demo-section-heading');
-    sampleHeading.append(this.element('h3', '', this.t.samples), this.element('span', '', this.t.samplesHint));
+    this.sampleHeading = this.element('h3', '', this.t.samples); this.sampleHeading.tabIndex = -1;
+    sampleHeading.append(this.sampleHeading, this.element('span', '', this.t.samplesHint));
     this.samples = this.element('div', 'demo-samples');
     this.samples.setAttribute('aria-label', this.t.samples);
-    this.workspace = this.element('section', 'demo-workspace'); this.workspace.setAttribute('aria-label', this.t.result);
+    this.workspace = this.element('section', 'demo-workspace'); this.workspace.id = 'demo-result'; this.workspace.setAttribute('aria-label', this.t.result);
     this.workspace.append(this.element('p', 'demo-empty', this.t.empty));
     this.root.append(intro, upload, sampleHeading, this.samples, this.workspace, this.element('p', 'demo-boundary', this.t.boundary));
     this.status(this.t.idle);
@@ -281,7 +396,12 @@ class DemoApplication {
         const button = this.element('button', 'demo-sample'); button.type = 'button'; button.dataset.sample = sample.id; button.setAttribute('aria-pressed', 'false');
         button.append(this.element('span', 'demo-sample-number', String(index + 1).padStart(2, '0')),
           this.element('strong', '', sample.title[this.language]), this.element('span', '', sample.description[this.language]));
-        button.addEventListener('click', () => this.loadSample(sample)); this.samples.append(button);
+        button.addEventListener('click', () => this.loadSample(sample));
+        const card = this.element('div', 'demo-sample-card');
+        const source = this.element('a', 'demo-sample-download', this.t.sourcePdf);
+        source.href = new DemoAsset(this.galleryBase, sample.files.pdf).url.href; source.download = sample.id + '.pdf';
+        source.setAttribute('aria-label', this.t.sourcePdf + ' — ' + sample.title[this.language]);
+        card.append(button, source); this.samples.append(card);
       });
       const requested = new URL(location.href).searchParams.get('sample');
       if (generation === this.generation) await this.loadSample(this.manifest.cases.find(sample => sample.id === requested) || this.manifest.cases[0], false);
@@ -303,7 +423,12 @@ class DemoApplication {
   clear() {
     this.stop(); this.releasePreview(); this.artifact = null; this.input.value = ''; this.clearButton.hidden = true;
     this.samples.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', 'false'));
-    this.workspace.replaceChildren(this.element('p', 'demo-empty', this.t.empty)); this.status(this.t.idle);
+    this.resultJump.disabled = true;
+    this.workspace.replaceChildren(this.element('p', 'demo-empty', this.t.empty)); this.status(this.t.idle); this.choose.focus();
+  }
+  showResult() {
+    if (!this.artifact || !this.resultHeading?.isConnected) return;
+    this.resultHeading.focus({preventScroll: true}); this.workspace.scrollIntoView({block: 'start', behavior: 'instant'});
   }
   async loadSample(sample, updateUrl = true) {
     if (!sample) return;
@@ -328,12 +453,13 @@ class DemoApplication {
         version: this.manifest.htmlPackage?.version || this.manifest.runtime?.pdfToHtmlVersion || '0.7.0'};
       this.samples.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.sample === sample.id)));
       this.selectedTab = 'compare'; this.renderArtifact(); this.status(this.t.idle);
-      if (updateUrl) { const url = new URL(location.href); url.searchParams.set('sample', sample.id); history.replaceState(null, '', url); }
+      if (updateUrl) { const url = new URL(location.href); url.searchParams.set('sample', sample.id); history.replaceState(null, '', url); this.showResult(); }
     } catch (error) { if (generation === this.generation && error.name !== 'AbortError') this.status(this.t.loadError, false, true); }
   }
   async importFile(file) {
     this.stop(); const generation = this.generation;
     this.releasePreview(); this.artifact = null;
+    this.resultJump.disabled = true;
     this.workspace.replaceChildren(this.element('p', 'demo-empty', this.t.converting));
     this.samples.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', 'false'));
     this.clearButton.hidden = false;
@@ -353,7 +479,7 @@ class DemoApplication {
       });
       this.artifact = {title: file.name, description: this.t.inputDescription, html: result.html, assets, diagnostics: result.diagnostics,
         filename: file.name, pdf: bytes, previews: [], trustedReset: false, version: '0.7.0', durationMs: response.meta?.durationMs};
-      this.selectedTab = 'html'; this.renderArtifact(); this.status(this.t.complete);
+      this.selectedTab = 'html'; this.renderArtifact(); this.status(this.t.complete); this.showResult();
     } catch (error) {
       if (generation !== this.generation || error.code === 'cancelled') return;
       const code = ({untagged_pdf: 'untagged', encrypted_pdf: 'encrypted', resource_limit: 'unavailable', unsupported_pdf: 'unavailable', runtime_unavailable: 'engineError', file_size: 'tooLarge', invalid_pdf: 'notPdf'})[error.code] || error.code;
@@ -364,10 +490,13 @@ class DemoApplication {
   renderArtifact() {
     this.releasePreview(); const artifact = this.artifact; this.workspace.replaceChildren();
     const header = this.element('div', 'demo-workspace-header'); const heading = this.element('div');
-    heading.append(this.element('h3', '', artifact.title), this.element('p', '', artifact.description));
+    this.resultHeading = this.element('h3', '', artifact.title); this.resultHeading.tabIndex = -1;
+    this.resultJump.disabled = false;
+    heading.append(this.resultHeading, this.element('p', '', artifact.description));
     const actions = this.element('div', 'demo-actions');
-    actions.append(this.button(this.t.downloadPdf, '', () => this.download(artifact.pdf, 'application/pdf', artifact.filename)),
-      this.button(this.t.downloadHtml, '', event => this.downloadBundle(event.currentTarget)));
+    actions.append(this.button(this.t.downloadPdf, 'demo-primary', () => this.download(artifact.pdf, 'application/pdf', artifact.filename)),
+      this.button(this.t.downloadHtml, '', event => this.downloadBundle(event.currentTarget)),
+      this.button(this.t.backExamples, '', () => { this.sampleHeading.focus({preventScroll: true}); this.sampleHeading.scrollIntoView({block: 'start', behavior: 'instant'}); }));
     header.append(heading, actions);
     const tabs = this.element('div', 'demo-tabs'); tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', this.t.result);
     const names = ['compare', 'html', 'pdf', 'code', 'diagnostics'];
@@ -412,14 +541,7 @@ class DemoApplication {
     if (name === 'compare') { const panes = this.element('div', 'demo-compare'); panes.append(this.pdfPane(), this.htmlPane()); this.panels.append(panes); }
     if (name === 'html') this.panels.append(this.htmlPane());
     if (name === 'pdf') this.panels.append(this.pdfPane());
-    if (name === 'code') {
-      const actions = this.element('div', 'demo-inspection'); actions.style.minHeight = '0';
-      actions.append(this.element('p', '', this.t.codeHelp), this.button(this.t.copy, '', async event => {
-        const button = event.currentTarget;
-        try { await navigator.clipboard.writeText(this.artifact.html); button.textContent = this.t.copied; } catch { /* The selectable code remains available. */ }
-      }));
-      this.panels.append(actions, this.element('pre', 'demo-code', this.artifact.html));
-    }
+    if (name === 'code') this.panels.append(new HtmlSourceView(this.artifact.html, this.t).render());
     if (name === 'diagnostics') this.diagnosticsPane();
   }
   pdfPane() {
@@ -459,6 +581,14 @@ class DemoApplication {
     section.append(messages);
     if (this.artifact.code) {
       section.append(this.element('h4', '', this.t.provenance));
+      const actions = this.element('div', 'demo-actions');
+      for (const [key, label] of [['code', this.t.downloadCode], ['latexProvenance', this.t.latexProvenance]]) {
+        const record = this.artifact.sample?.files[key];
+        if (!record) continue;
+        const link = this.element('a', 'demo-button', label);
+        link.href = new DemoAsset(this.galleryBase, record).url.href; link.download = record.path.split('/').at(-1); actions.append(link);
+      }
+      section.append(actions);
       const details = this.element('details'); details.append(this.element('summary', '', this.t.generator), this.element('pre', 'demo-code', this.artifact.code)); section.append(details);
     }
     this.panels.append(section);

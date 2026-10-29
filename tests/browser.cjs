@@ -47,10 +47,14 @@ class BrowserChecks {
       const manifest = await (await context.request.get(new URL('gallery-manifest.json', galleryBase).href)).json();
       check('Ten real PDF examples are available', manifest.cases.length === 10 && await page.locator('.demo-sample').count() === 10);
       check('No PHP runtime is fetched just to browse the gallery', !requests.some(item => /\.wasm(?:\.gz)?$|application\.zip/.test(item.url)));
+      check('Every gallery card offers its own source PDF download', await page.locator('.demo-sample-download[download]').count() === manifest.cases.length);
+      await page.getByRole('button', {name: 'See the result', exact: true}).click();
+      check('The explicit result shortcut moves keyboard focus to the visible result heading', await this.resultFocused(page));
       for (const sample of manifest.cases) {
         await page.locator('[data-sample="' + sample.id + '"]').click();
         await page.waitForFunction(id => document.querySelector('[data-sample="' + id + '"]')?.getAttribute('aria-pressed') === 'true'
           && document.querySelector('[data-demo-root]')?.getAttribute('aria-busy') === 'false', sample.id);
+        check(sample.id + ': choosing an example reveals its result and moves keyboard focus', await this.resultFocused(page));
         const frame = page.frameLocator('iframe[title="Derived HTML"]');
         for (const tag of sample.expected?.tags || []) await frame.locator(tag).first().waitFor();
         check(sample.id + ': expected semantic elements survive real PDF reading');
@@ -90,14 +94,25 @@ class BrowserChecks {
         await page.getByRole('tab', {name: 'HTML code', exact: true}).click();
         const expected = await (await context.request.get(new URL(sample.files.html.path, galleryBase).href)).text();
         assert.equal(await page.locator('.demo-code').textContent(), expected);
-        check(sample.id + ': displayed source is byte-identical to the converter output');
+        check(sample.id + ': source defaults to the original layout', await page.locator('.demo-code').getAttribute('data-mode') === 'original'
+          && await page.locator('.demo-source-token').count() === 0);
+        await page.getByRole('button', {name: 'Readable view', exact: true}).click();
+        assert.equal(await page.locator('.demo-code').textContent(), expected);
+        check(sample.id + ': readable source preserves every character of the converter output', await page.locator('.demo-source-token').count() > 3);
       }
+      await this.sourcePresentation(page, assetBase, check, record);
+      const sampleLink = page.locator('.demo-sample-download').first();
+      const sourceDownloadEvent = page.waitForEvent('download'); await sampleLink.click();
+      const sourceDownload = await sourceDownloadEvent;
+      const sourceBytes = await fs.readFile(await sourceDownload.path());
+      check('A gallery source download returns the exact inventoried PDF', crypto.createHash('sha256').update(sourceBytes).digest('hex') === manifest.cases[0].files.pdf.sha256);
       const basic = manifest.cases.find(sample => sample.id === 'mathml');
       const pdf = await (await context.request.get(new URL(basic.files.pdf.path, galleryBase).href)).body();
       const expected = await (await context.request.get(new URL(basic.files.html.path, galleryBase).href)).text();
       const beforeUpload = requests.length;
       await page.locator('input[type=file]').setInputFiles({name: 'mathml.pdf', mimeType: 'application/pdf', buffer: pdf});
       await page.waitForFunction(() => document.querySelector('.demo-status')?.textContent.includes('Conversion complete'), null, {timeout: 45000});
+      check('A completed import reveals its result and focuses the heading', await this.resultFocused(page));
       await page.getByRole('tab', {name: 'HTML code', exact: true}).click();
       assert.equal(await page.locator('.demo-code').textContent(), expected);
       check('A user-selected PDF is actually converted in WebAssembly to the exact native HTML');
@@ -143,6 +158,8 @@ class BrowserChecks {
       await page.goto(fr.href);
       await page.locator('.demo-result-frame').first().waitFor();
       check('The French interface includes translated upload and inspection controls', await page.getByRole('button', {name: 'Choisir un PDF', exact: true}).count() === 1 && await page.getByRole('tab', {name: 'Code HTML', exact: true}).count() === 1);
+      await page.getByRole('button', {name: 'Voir le résultat', exact: true}).click();
+      check('The French result shortcut focuses its visible result', await this.resultFocused(page));
       await screenshot('fr-desktop');
       await page.getByRole('tab', {name: 'Comparer', exact: true}).focus(); await page.keyboard.press('ArrowRight');
       check('Tabs support keyboard arrow navigation', await page.getByRole('tab', {name: 'Résultat HTML', exact: true}).getAttribute('aria-selected') === 'true');
@@ -163,6 +180,62 @@ class BrowserChecks {
       await screenshot('failure').catch(() => {});
       throw error;
     } finally { await browser.close(); }
+  }
+  async resultFocused(page) {
+    return page.locator('.demo-workspace h3').evaluate(heading => {
+      const bounds = heading.getBoundingClientRect();
+      return document.activeElement === heading && bounds.top >= 0 && bounds.bottom <= innerHeight;
+    });
+  }
+  async sourcePresentation(page, assetBase, check, record) {
+    const original = await page.locator('.demo-code').textContent();
+    await page.getByRole('button', {name: 'Original source', exact: true}).click();
+    check('Original source view preserves exact text without visual token wrappers', await page.locator('.demo-code').textContent() === original
+      && await page.locator('.demo-source-token').count() === 0);
+    await page.getByRole('button', {name: 'Readable view', exact: true}).click();
+    const evidence = await page.evaluate(async moduleUrl => {
+      const {HtmlSourceView, PreviewDocument, BrowserConverter} = await import(moduleUrl);
+      const source = '<!doctype html><html><head><style>p::before{content:"<literal>"}</style></head><body><!-- exact > comment --><p title="1 > 0">A <em>mixed</em> sentence.</p><math xmlns="http://www.w3.org/1998/Math/MathML"><mo> + </mo><mtext> a  b\n c </mtext><mi>x</mi></math><pre> a\n b\tc </pre><script>window.sourceExecuted=true</script></body></html>';
+      const copy = {codeHelp: '', readableCode: 'Readable view', originalCode: 'Original source', copy: 'Copy HTML', copied: 'Copied', codeLimit: 'Limit'};
+      const view = new HtmlSourceView(source, copy), container = view.render();
+      const originalByDefault = view.code.dataset.mode === 'original' && view.code.textContent === source && !view.code.children.length;
+      view.show('readable');
+      container.className = 'demo-app'; container.style.position = 'fixed'; container.style.left = '-10000px'; document.body.append(container);
+      const code = container.querySelector('.demo-code');
+      const selection = document.getSelection(), range = document.createRange(); range.selectNodeContents(code); selection.removeAllRanges(); selection.addRange(range);
+      const copyEvent = new ClipboardEvent('copy', {clipboardData: new DataTransfer(), bubbles: true, cancelable: true}); code.dispatchEvent(copyEvent);
+      const copied = copyEvent.clipboardData.getData('text/plain'); selection.removeAllRanges();
+      const artifact = html => ({html, assets: [], trustedReset: false});
+      const preview = new PreviewDocument(artifact(source), []).build();
+      const after = new PreviewDocument(artifact(code.textContent), []).build();
+      const math = new DOMParser().parseFromString(after, 'text/html');
+      const preserved = code.textContent === source, tokens = code.children.length, visualLines = getComputedStyle(code.firstElementChild).display === 'block';
+      const limited = new HtmlSourceView('x'.repeat(1024 * 1024 + 1), copy); limited.render(); limited.show('readable');
+      const limits = !limited.notice.hidden && limited.code.textContent.length === 1024 * 1024 + 1 && !limited.code.children.length;
+      container.remove();
+      const cleanup = [];
+      for (const failure of ['identifier', 'constructor', 'postMessage', 'messageerror']) {
+        let terminated = 0;
+        const worker = {terminate() { terminated++; }, postMessage() { if (failure === 'postMessage') throw new Error('private implementation detail'); }};
+        const converter = new BrowserConverter(new URL('./', moduleUrl), () => {},
+          () => { if (failure === 'constructor') throw new Error('private implementation detail'); return worker; },
+          () => { if (failure === 'identifier') throw new Error('private implementation detail'); return 'test-identifier'; });
+        const result = converter.convert('private.pdf', new Uint8Array([1]));
+        if (failure === 'messageerror') { worker.onmessageerror(); worker.onerror(); }
+        const error = await result.catch(error => error);
+        cleanup.push(error.code === 'engineError' && !error.message.includes('private') && converter.worker === null && converter.timer === null && converter.reject === null && terminated === (['identifier', 'constructor'].includes(failure) ? 0 : 1));
+      }
+      return {originalByDefault, preserved, copiedExactly: copied === source, tokens, visualLines, samePreview: preview === after,
+        operator: math.querySelector('mo').textContent, mathText: math.querySelector('mtext').textContent,
+        noExecution: !window.sourceExecuted, limits, cleanup};
+    }, new URL('app.js', assetBase).href);
+    check('HTML source opens in its original layout and formatting remains optional', evidence.originalByDefault);
+    check('Readable HTML adds visual layout while preserving literal text and MathML whitespace', evidence.preserved && evidence.tokens > 10
+      && evidence.visualLines && evidence.samePreview && evidence.operator === ' + ' && evidence.mathText === ' a  b\n c ');
+    check('Copying a selection preserves source characters without visual line breaks', evidence.copiedExactly);
+    check('Source inspection never executes embedded markup and bounds visual formatting', evidence.noExecution && evidence.limits);
+    check('Missing identifier capability, Worker construction, transfer and deserialization failures release resources exactly once', evidence.cleanup.every(Boolean));
+    record.sourcePresentation = evidence;
   }
   async widgetAppearances(page, frame, check, record) {
     const iframe = page.locator('iframe[title="Derived HTML"]');
@@ -251,27 +324,34 @@ class BrowserChecks {
   }
   async startupChecks(context, en, fr, pdf, check, record, browserName) {
     record.startupFailures = [];
-    for (const [language, url, prefix] of [
-      ['en', en, 'The local conversion engine could not load or run.'],
-      ['fr', fr, 'Le moteur de conversion local n’a pas pu se charger ou s’exécuter.'],
+    for (const [language, url, messages] of [
+      ['en', en, ['The local conversion engine could not load or run.', 'A file needed by the local converter could not be downloaded.', 'A downloaded converter file did not match the expected version.']],
+      ['fr', fr, ['Le moteur de conversion local n’a pas pu se charger ou s’exécuter.', 'Un fichier nécessaire au convertisseur local n’a pas pu être téléchargé.', 'Un fichier téléchargé du convertisseur ne correspond pas à la version attendue.']],
     ]) {
+      for (const [index, scenario] of ['worker', 'download', 'integrity'].entries()) {
       const page = await context.newPage();
+      const requests = [];
+      page.on('request', request => requests.push({url: request.url(), method: request.method(), body: request.postData()}));
       try {
-        await page.route('**/assets/conversion-worker.js', route => route.abort('blockedbyclient'));
+        if (scenario === 'worker') await page.route('**/assets/conversion-worker.js', route => route.abort('blockedbyclient'));
+        if (scenario === 'download') await page.route('**/assets/runtime-manifest.json', route => route.fulfill({status: 404, body: 'Missing runtime'}));
+        if (scenario === 'integrity') await page.route('**/assets/runtime/*/php_8_3.js', route => route.fulfill({status: 200, contentType: 'text/javascript', body: 'fetch("/must-not-execute-corrupt-runtime")'}));
         await page.goto(url.href);
         await page.locator('.demo-sample').first().waitFor();
-        await page.locator('input[type=file]').setInputFiles({name: 'blocked-worker.pdf', mimeType: 'application/pdf', buffer: pdf});
+        await page.locator('input[type=file]').setInputFiles({name: 'private-startup-test.pdf', mimeType: 'application/pdf', buffer: pdf});
         await page.waitForFunction(() => document.querySelector('.demo-status')?.dataset.error === 'true');
         const status = await page.locator('.demo-status').textContent();
-        check(language + ': blocked Worker reports a localized startup failure without blaming the browser version',
-          status.startsWith(prefix) && status.includes('WebAssembly') && status.includes('Worker')
+        check(language + ': ' + scenario + ' failure reports its own localized cause without exposing runtime errors',
+          status.startsWith(messages[index]) && !status.includes('private-startup-test') && !status.includes('current version')
           && await page.locator('[data-demo-root]').getAttribute('aria-busy') === 'false'
-          && await page.locator('.demo-workspace iframe').count() === 0);
-        const filename = browserName + '-startup-' + language + '.png';
+          && await page.locator('.demo-workspace iframe').count() === 0
+          && requests.every(request => request.method === 'GET' && !request.body && !request.url.includes('must-not-execute') && !request.url.includes('private-startup-test')));
+        const filename = browserName + '-startup-' + language + '-' + scenario + '.png';
         await page.screenshot({path: path.join(this.output, filename), fullPage: true});
         record.screenshots.push(filename);
-        record.startupFailures.push({language, status, passed: true});
+        record.startupFailures.push({language, scenario, status, passed: true});
       } finally { await page.close(); }
+      }
     }
   }
   async raceChecks(context, url, assetBase, pdf, check) {
