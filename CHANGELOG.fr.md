@@ -24,6 +24,10 @@
   les sorties PHP natif/WebAssembly dans Chromium et Firefox, avec les contrôles
   existants de confidentialité, entrées hostiles, annulation, clavier et mobile.
   Conserver les attributions PDF.js/Apache dans le runtime et les archives.
+- Limiter le témoin JPEG 2000 de la galerie à 160 × 80 pixels pour les runtimes
+  WebAssembly plus lents, avec sa référence indépendante sans perte et la limite
+  Worker inchangée de 30 secondes. Conserver durée d’import, messages d’échec
+  et captures dans les preuves navigateur.
 
 ## 0.1.0 — 2026-10-28
 

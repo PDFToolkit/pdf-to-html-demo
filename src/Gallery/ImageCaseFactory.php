@@ -37,7 +37,7 @@ final readonly class ImageCaseFactory
         };
         $image = new EncodedImageXObject(
             $fixture->bytes,
-            new ImageDimensions(320, 160),
+            new ImageDimensions($fixture->width, $fixture->height),
             new EncodedData($filter),
             new DeviceColourSpace($fixture->id === 'jbig2' ? ColourSpaceFamily::DeviceGray : ColourSpaceFamily::DeviceRGB),
             new IntegerType($fixture->id === 'jbig2' ? 1 : 8),
@@ -64,7 +64,7 @@ final readonly class ImageCaseFactory
             ['en' => ['Import this PDF to reproduce the gallery result locally.', $fixture->id === 'jpeg' ? 'The PDF Decode array reverses the encoded colours, requiring actual PHP decoding.' : 'The original encoded image and an independent pixel reference accompany the example.', $fixture->id === 'jpeg' ? 'JPEG is lossy; the reference is an independent JPEG decoding, not the precompression artwork.' : 'This example uses lossless image coding; pixel samples are compared exactly.'],
              'fr' => ['Importer ce PDF pour reproduire localement le résultat de la galerie.', $fixture->id === 'jpeg' ? 'Le tableau Decode du PDF inverse les couleurs compressées, ce qui exige un vrai décodage PHP.' : 'L’image compressée originale et une référence indépendante des pixels accompagnent le cas.', $fixture->id === 'jpeg' ? 'JPEG est avec pertes ; la référence est un décodage JPEG indépendant, pas le dessin avant compression.' : 'Ce cas utilise un codage sans perte ; les échantillons de pixels sont comparés exactement.']],
             capabilities: ['pure-php-image-codecs'],
-            expected: ['tags' => ['figure', 'img', 'p'], 'scripts' => false, 'image' => ['filter' => $filter->value, 'width' => 320, 'height' => 160, 'maximumPixelError' => $fixture->provenance['image']['maximumPixelError'], 'pdfDecode' => $fixture->provenance['image']['pdfDecode']]],
+            expected: ['tags' => ['figure', 'img', 'p'], 'scripts' => false, 'image' => ['filter' => $filter->value, 'width' => $fixture->width, 'height' => $fixture->height, 'maximumPixelError' => $fixture->provenance['image']['maximumPixelError'], 'pdfDecode' => $fixture->provenance['image']['pdfDecode']]],
             image: $fixture,
         );
     }

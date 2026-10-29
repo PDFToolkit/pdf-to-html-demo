@@ -37,18 +37,18 @@
     },
     {
       "id": "jpeg2000",
-      "width": 320,
-      "height": 160,
+      "width": 160,
+      "height": 80,
       "filter": "JPXDecode",
       "encoded": {
         "path": "jpeg2000.jp2",
-        "bytes": 20853,
-        "sha256": "d3c094591bc8ae89ad2525d53b9dc7fbfa652a12347ad02b48d19d5dd398d8a4"
+        "bytes": 10708,
+        "sha256": "539d645467ec43e8eec19feb188bcd3fd6e92044fce2f9fa77641a646b9e7bc4"
       },
       "expected": {
-        "path": "original-rgb.png",
-        "bytes": 4246,
-        "sha256": "976644a3c88e5d92f4326831309156c67cad3e0d9a6bbda8ecb1cdf264ff2954"
+        "path": "jpeg2000-expected.png",
+        "bytes": 6679,
+        "sha256": "d33e1c8fb15422b4eadd89b3cf201b6769b5be801cefa023c4114cc1c87926df"
       },
       "maximumPixelError": 0,
       "pdfDecode": null

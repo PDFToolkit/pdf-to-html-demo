@@ -22,6 +22,10 @@
   output in Chromium and Firefox, alongside the existing privacy, hostile-input,
   cancellation, keyboard and mobile checks. Retain PDF.js/Apache attribution in
   both the runtime and downloadable archives.
+- Keep the JPEG 2000 gallery witness at 160 × 80 pixels for slower WebAssembly
+  runtimes, with an independent lossless reference and the unchanged 30-second
+  Worker deadline. Retain import duration, failure messages and screenshots in
+  browser evidence.
 
 ## 0.1.0 — 2026-10-28
 

@@ -65,12 +65,16 @@ class ImageExamples:
 
     def run(self):
         rgb, bilevel = self.artwork(), self.artwork(True)
-        original = self.write('original-rgb.png', self.encode(rgb, 'PNG'))
+        self.write('original-rgb.png', self.encode(rgb, 'PNG'))
+        # The browser keeps its 30-second budget, including a cold PHP runtime.
+        # This smaller lossless JPX witness remains practical on slower CPUs.
+        jpx = rgb.resize((160, 80), Image.Resampling.LANCZOS)
+        jpx_original = self.write('jpeg2000-expected.png', self.encode(jpx, 'PNG'))
         mono = self.write('original-bilevel.png', self.encode(bilevel, 'PNG'))
         cases = []
         for name, image, data, suffix, filter, tolerance in (
             ('jpeg', rgb, self.encode(ImageOps.invert(rgb), 'JPEG', quality=90, subsampling=0, optimize=False), 'jpg', 'DCTDecode', 3),
-            ('jpeg2000', rgb, self.encode(rgb, 'JPEG2000', irreversible=False, mct=1), 'jp2', 'JPXDecode', 0),
+            ('jpeg2000', jpx, self.encode(jpx, 'JPEG2000', irreversible=False, mct=1), 'jp2', 'JPXDecode', 0),
             ('jbig2', bilevel, self.jbig2(bilevel), 'jb2', 'JBIG2Decode', 0),
         ):
             encoded = self.write(name + '.' + suffix, data)
@@ -78,7 +82,7 @@ class ImageExamples:
                 with Image.open(io.BytesIO(data)) as decoded:
                     expected = self.write(name + '-expected.png', self.encode(ImageOps.invert(decoded.convert('RGB')), 'PNG'))
             else:
-                expected = original if name == 'jpeg2000' else mono
+                expected = jpx_original if name == 'jpeg2000' else mono
             cases.append({'id': name, 'width': image.width, 'height': image.height, 'filter': filter,
                           'encoded': encoded, 'expected': expected, 'maximumPixelError': tolerance, 'pdfDecode': [1, 0] * 3 if name == 'jpeg' else None})
         manifest = {'schemaVersion': 1, 'license': 'MIT', 'artwork': 'Original PDFToolkit geometric illustration; no third-party image or document.',

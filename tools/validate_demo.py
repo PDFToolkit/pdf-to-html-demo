@@ -234,7 +234,8 @@ class DemoValidation:
         provenance = json.loads(self.path(gallery, case['files']['imageProvenance']['path']).read_text())
         self.check(str(source['/Filter']) == '/' + expected['filter'] and source._data == original,
                    case['id'] + ': source PDF retains the actual advertised compressed bytes')
-        self.check((source['/Width'], source['/Height']) == (expected['width'], expected['height']) == (320, 160),
+        dimensions = (160, 80) if case['id'] == 'jpeg2000' else (320, 160)
+        self.check((source['/Width'], source['/Height']) == (expected['width'], expected['height']) == dimensions,
                    case['id'] + ': explicit source image dimensions')
         self.check(list(source.get('/Decode', [])) == (expected.get('pdfDecode') or []),
                    case['id'] + ': explicit PDF Decode mapping')
@@ -250,7 +251,7 @@ class DemoValidation:
         self.check(self.digest(reference_path.read_bytes()) == provenance['image']['expected']['sha256'],
                    case['id'] + ': independent pixel reference matches retained provenance')
         with Image.open(io.BytesIO(raw)) as actual, Image.open(reference_path) as reference:
-            self.check(actual.size == reference.size == (320, 160), case['id'] + ': decoded native pixel dimensions')
+            self.check(actual.size == reference.size == dimensions, case['id'] + ': decoded native pixel dimensions')
             difference = ImageChops.difference(actual.convert('RGB'), reference.convert('RGB'))
             maximum = max(upper for lower, upper in difference.getextrema())
             tolerance = 3 if case['id'] == 'jpeg' else 0

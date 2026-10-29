@@ -80,6 +80,15 @@ or normative test picture is used. The gallery embeds the exact compressed
 bytes in native PDF image objects. These tools run only when regenerating the
 retained inputs, never in the browser or during ordinary gallery builds.
 
+The JPEG 2000 witness uses a 160 × 80 Lanczos reduction of that artwork before
+lossless encoding; JPEG and JBIG2 remain 320 × 160. Its separate source PNG and
+declared native dimensions are retained and compared exactly. This keeps the
+interactive example practical in a fresh Firefox WebAssembly Worker on slower
+CPUs without increasing the application's 30-second deadline. Runtime speed
+depends on the browser and device; even an input below the pixel limit can
+exhaust the time budget. The full codec validation corpus remains independent
+of these small teaching examples.
+
 The JPEG input stores inverted colours and the PDF supplies `/Decode [1 0 1 0
 1 0]`. This forces actual PHP decoding instead of the converter's compatible
 JPEG passthrough. Its reference is independently decoded by libjpeg and inverted
@@ -94,6 +103,8 @@ checks the embedded PDF stream, image dimensions, Decode mapping and pixel
 comparison independently with pypdf and Pillow. Chromium and Firefox then import
 the real PDFs through fresh WebAssembly Workers and compare exact HTML and
 PNG assets to native conversion. PNG captures show the real isolated preview.
+Browser reports retain each import's duration and terminal status. A failure
+also retains the visible message and a screenshot, including deadline errors.
 
 ## Rebuild
 

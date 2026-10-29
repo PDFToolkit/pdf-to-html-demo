@@ -156,6 +156,15 @@ class BrowserChecks {
       check('Application scripts produce no uncaught browser errors', errors.length === 0);
       record.requests = requests.length;
       record.passed = true;
+    } catch (error) {
+      record.failure = {
+        message: error.message,
+        status: await page.locator('.demo-status').textContent().catch(() => null),
+        busy: await page.locator('[data-demo-root]').getAttribute('aria-busy').catch(() => null),
+        pageErrors: errors,
+      };
+      await screenshot('failure').catch(() => {});
+      throw error;
     } finally { await browser.close(); }
   }
   async imageImports(page, context, manifest, galleryBase, requests, check, screenshot, record) {
@@ -166,8 +175,22 @@ class BrowserChecks {
       const pdf = await (await context.request.get(new URL(sample.files.pdf.path, galleryBase).href)).body();
       const html = await (await context.request.get(new URL(sample.files.html.path, galleryBase).href)).text();
       const requestStart = requests.length;
+      const started = performance.now();
+      const conversion = {id, startedAt: new Date().toISOString(), passed: false};
+      record.imageCodecs.push(conversion);
       await page.locator('input[type=file]').setInputFiles({name: id + '.pdf', mimeType: 'application/pdf', buffer: pdf});
-      await page.waitForFunction(() => document.querySelector('.demo-status')?.textContent.includes('Conversion complete'), null, {timeout: 45000});
+      try {
+        await page.waitForFunction(() => {
+          const status = document.querySelector('.demo-status');
+          return status?.dataset.error === 'true' || status?.textContent.includes('Conversion complete');
+        }, null, {timeout: 45000});
+      } finally {
+        conversion.elapsedMs = Math.round(performance.now() - started);
+        conversion.status = await page.locator('.demo-status').textContent();
+        conversion.error = await page.locator('.demo-status').getAttribute('data-error') === 'true';
+      }
+      assert.ok(!conversion.error && conversion.status.includes('Conversion complete'),
+        id + ': conversion must finish within the unchanged 30-second Worker budget: ' + conversion.status);
       await page.getByRole('tab', {name: 'HTML code', exact: true}).click();
       assert.equal(await page.locator('.demo-code').textContent(), html);
       check(id + ': real WebAssembly decoding produces byte-identical native HTML');
@@ -189,10 +212,13 @@ class BrowserChecks {
       const pixels = await frame.locator('img').evaluate(async image => {
         await image.decode(); return {width: image.naturalWidth, height: image.naturalHeight};
       });
-      check(id + ': browser displays the native 320 by 160 decoded pixels', pixels.width === 320 && pixels.height === 160);
+      const dimensions = id === 'jpeg2000' ? [160, 80] : [320, 160];
+      check(id + ': browser displays the exact native decoded dimensions',
+        pixels.width === dimensions[0] && pixels.height === dimensions[1]
+        && pixels.width === sample.expected.image.width && pixels.height === sample.expected.image.height);
       check(id + ': no source bytes or filenames leave the page', requests.slice(requestStart).every(request => request.method === 'GET' && !request.body && new URL(request.url).origin === this.base.origin && !request.url.includes(id + '.pdf')));
       await screenshot('wasm-' + id);
-      record.imageCodecs.push({id, nativeHtmlSha256: crypto.createHash('sha256').update(html).digest('hex'), assets: hashes, passed: true});
+      Object.assign(conversion, {nativeHtmlSha256: crypto.createHash('sha256').update(html).digest('hex'), assets: hashes, passed: true});
     }
   }
   async raceChecks(context, url, assetBase, pdf, check) {

@@ -83,6 +83,15 @@ octets compressés exacts dans des objets image PDF natifs. Ces outils ne serven
 qu’à régénérer les entrées conservées, jamais dans le navigateur ni lors d’un
 build ordinaire de la galerie.
 
+Le témoin JPEG 2000 utilise une réduction Lanczos de ce dessin à 160 × 80 avant
+codage sans perte ; JPEG et JBIG2 restent à 320 × 160. Son PNG source distinct
+et ses dimensions natives déclarées sont conservés et comparés exactement.
+Ce choix garde l’exemple interactif utilisable dans un nouveau Worker
+WebAssembly Firefox sur des processeurs plus lents, sans augmenter la limite
+de 30 secondes. La vitesse dépend du navigateur et de l’appareil ; même un
+fichier sous la limite de pixels peut épuiser le budget temporel. Le corpus
+complet de validation des codecs reste indépendant de ces petits exemples.
+
 L’entrée JPEG contient les couleurs inversées et le PDF fournit `/Decode [1 0
 1 0 1 0]`. Cela impose un vrai décodage PHP au lieu de conserver directement un
 JPEG compatible. La référence est décodée indépendamment par libjpeg puis
@@ -98,6 +107,9 @@ le tableau Decode et les pixels avec pypdf et Pillow. Chromium et Firefox
 importent ensuite les vrais PDF dans de nouveaux Workers WebAssembly et
 comparent le HTML et les ressources PNG exacts à la conversion native. Les
 captures PNG montrent le véritable aperçu isolé.
+Les rapports navigateur conservent la durée et l’état final de chaque import.
+Un échec conserve aussi le message affiché et une capture, notamment lorsque
+la limite de durée est atteinte.
 
 ## Reconstruire
 

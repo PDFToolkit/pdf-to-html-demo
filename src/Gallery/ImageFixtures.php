@@ -20,10 +20,11 @@ final readonly class ImageFixtures
         }
         $result = [];
         foreach ($manifest['cases'] as $case) {
-            if ($case['width'] !== 320 || $case['height'] !== 160 || ($case['maximumPixelError'] ?? -1) !== ($case['id'] === 'jpeg' ? 3 : 0)) {
+            [$width, $height] = $case['id'] === 'jpeg2000' ? [160, 80] : [320, 160];
+            if ($case['width'] !== $width || $case['height'] !== $height || ($case['maximumPixelError'] ?? -1) !== ($case['id'] === 'jpeg' ? 3 : 0)) {
                 throw new \RuntimeException('Unexpected gallery image dimensions or pixel tolerance.');
             }
-            $result[] = new ImageFixture($case['id'], $this->verified($case['encoded']), $this->verified($case['expected']), [
+            $result[] = new ImageFixture($case['id'], $this->verified($case['encoded']), $this->verified($case['expected']), $width, $height, [
                 'license' => $manifest['license'], 'artwork' => $manifest['artwork'], 'generator' => $manifest['generator'], 'tools' => $manifest['tools'], 'image' => $case,
             ]);
         }
