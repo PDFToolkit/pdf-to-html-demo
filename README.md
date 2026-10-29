@@ -122,6 +122,10 @@ identity across system fonts, accessibility certification or certificate trust.
 The browser checks exercise the real WebAssembly engine, compare returned bytes
 with native conversion, inspect the gallery, forms, MathML and signatures, test
 failure/cancellation/privacy boundaries, and retain screenshots in both engines.
+The widget regression places its parent iframe outside a short viewport, scrolls
+it into view before interacting with its content, then checks three distinct
+normal, hover and pressed appearances. The report retains viewport geometry and
+appearance hashes for both standalone and documentation hosting.
 CI builds from the exact candidate and retains the generated artifact and reports.
 Native bridge checks run on PHP 8.3, 8.4 and 8.5.
 

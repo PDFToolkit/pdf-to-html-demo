@@ -4,6 +4,17 @@
 
 ## Non publié
 
+## 0.2.1 — 2026-10-29
+
+- Faire défiler l’iframe d’aperçu dans la zone visible avant que le test navigateur
+  interagisse avec son widget d’apparence. Chromium n’attend plus sur un élément
+  enfant hors écran lorsque la galerie de dix exemples est intégrée au site.
+- Reproduire le parent hors écran avec une fenêtre de test peu haute dans Chromium
+  et Firefox, vérifier que le défilement le rend visible, puis comparer les trois
+  apparences normale, survolée et pressée. Conserver géométrie et empreintes des
+  apparences dans le rapport navigateur. Les styles, budgets de conversion et
+  sorties de l’application restent inchangés.
+
 ## 0.2.0 — 2026-10-29
 
 - Utiliser HTML 0.7, Reader 0.7, le core 0.12.1 et Codecs PHP optionnel 0.1 publiés,

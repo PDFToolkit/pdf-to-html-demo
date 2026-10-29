@@ -4,6 +4,16 @@
 
 ## Unreleased
 
+## 0.2.1 — 2026-10-29
+
+- Scroll the containing preview iframe into view before the browser acceptance
+  test interacts with its appearance widget. This avoids Chromium waiting on an
+  off-screen child when the ten-example gallery is embedded in the documentation.
+- Reproduce the off-screen parent with a short test viewport in Chromium and
+  Firefox, verify that scrolling reveals it, then compare all three normal,
+  hover and pressed appearances. Retain geometry and appearance hashes in the
+  browser report. Application styles, conversion budgets and output are unchanged.
+
 ## 0.2.0 — 2026-10-29
 
 - Use released HTML 0.7, Reader 0.7, core 0.12.1 and optional PHP Codecs 0.1,

@@ -122,7 +122,7 @@ réelle de Poppler.
 ```sh
 composer install --no-dev --prefer-dist --no-interaction
 php bin/build-gallery.php --output dist/gallery \
-  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.2.0
+  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.2.1
 ```
 
 `--html-source` désigne le checkout publié du module HTML contenant

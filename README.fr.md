@@ -133,7 +133,12 @@ du certificat.
 Les contrôles navigateur exécutent le véritable moteur WebAssembly, comparent ses
 octets à la conversion native, vérifient galerie, formulaires, MathML et signatures,
 exercent erreurs, annulation et confidentialité, et conservent des captures dans
-les deux moteurs. La CI construit le candidat exact et conserve l’application et
+les deux moteurs. La régression du widget place son iframe parente hors d’une
+fenêtre peu haute, la fait défiler dans la zone visible avant d’interagir avec
+son contenu, puis contrôle trois apparences distinctes : normale, survolée et
+pressée. Le rapport conserve la géométrie et les empreintes pour l’application
+autonome comme pour son intégration à la documentation.
+La CI construit le candidat exact et conserve l’application et
 les rapports. Les contrôles du pont PHP tournent sur PHP 8.3, 8.4 et 8.5.
 
 Le code de l’application est sous licence MIT. PHP.wasm et les autres dépendances
