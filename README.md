@@ -6,22 +6,31 @@
 PDFs with their semantic HTML, interact with the results, and convert your own
 tagged PDF without sending it to a server.
 
-The application uses the unmodified, released
-[`pdftoolkit/pdf-to-html` 0.7.0](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.7.0)
-with its locked Reader and core dependencies. A fresh PHP 8.3 WebAssembly Worker
-per conversion runs the same PHP objects used by a native application. The
-runtime must report 64-bit integers and DOM, mbstring, zlib and ZIP support.
-No JavaScript reimplementation of PDF derivation is involved.
-
 ## Try it
 
-Choose a gallery example to see the source PDF and its actual HTML output next
-to one another. Inspect the HTML or diagnostics, use the interactive controls,
-and download the source or a ZIP containing the original HTML and all its assets.
-The [example guide](docs/examples.md) describes what each example demonstrates.
+1. Choose an example. The page takes you to its PDF and HTML result. **See the
+   result** also takes you there; **Back to examples** returns to the gallery.
+2. Compare the original PDF with the web page, then try **HTML result**, **HTML
+   code** or **Diagnostics**. A diagnostic explains content the converter could
+   not preserve or had to adapt.
+3. Use **Download source PDF** on any example card, or **Download PDF** above its
+   result. **Download HTML + assets** saves the exact HTML with its supporting
+   files in a ZIP.
 
-Choose or drop a tagged PDF to convert it locally. The engine is downloaded only
-on demand. Files remain in the page and Worker memory: there is no upload
+**Original source** is selected by default and keeps the original layout.
+Choose **Readable view** to add colours and visual indentation without adding or
+removing any source characters.
+**Copy HTML** and downloads preserve the exact converter output, including
+MathML whitespace. Visual formatting is limited to 1 MiB and 20,000 tokens;
+larger results remain available as original source and downloads.
+
+The [example guide](docs/examples.md) describes each case. A **tagged PDF**
+contains an explicit reading order and information about headings, lists and
+other content. Start with a gallery PDF if you do not have one.
+
+Choose or drop a tagged PDF to convert it on the fly in your browser. Gallery
+results are prepared in advance; your imported PDF is converted when you select
+it. The engine is downloaded only on demand. Files remain in the page and Worker memory: there is no upload
 endpoint, analytics, service worker, persistent browser storage or credential
 collection. Clear the file or close the page to release the application’s copy.
 Cancellation terminates the Worker. Ordinary browser caching may retain the
@@ -42,7 +51,11 @@ codec memory budget, within the Worker's overall limits. The HTML consumer still
 requires a representable colour space, depth and sampling grid; unsupported
 image semantics remain explicit diagnostics. This does not add page rendering.
 
-PDF scripts and remote resources are disabled. Results appear in an isolated
+The application explicitly enables filtered local CSS and the documented LaTeX
+catalogue Supplement merging profile from HTML 0.8.0. These options preserve
+styles independently of script permission; the converter still filters resource
+functions and unsupported CSS. PDF scripts and remote resources are disabled.
+Results appear in an isolated
 iframe; preview links cannot fetch remote destinations. The curated reset example
 alone enables the library-owned form runtime, without PDF ECMAScript. Its iframe
 has no same-origin, form submission, popup or top-navigation permission. The
@@ -58,6 +71,13 @@ not establish PKI trust or permission for later changes.
 
 ## Build and run
 
+The application uses the unmodified, released
+[`pdftoolkit/pdf-to-html` 0.8.0](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.8.0)
+with its locked Reader and core dependencies. A fresh PHP 8.3 WebAssembly Worker
+per conversion runs the same PHP objects used by a native application. The
+runtime must report 64-bit integers and DOM, mbstring, zlib and ZIP support.
+No JavaScript reimplementation of PDF derivation is involved.
+
 Requirements: 64-bit PHP 8.3+ with DOM, mbstring, zlib and OpenSSL; Composer;
 Node 24.18+ and npm 11.16+; Python 3.13; Poppler `pdftoppm`. The build also
 requires the Chromium version pinned by Playwright 1.62.1 to capture the actual
@@ -69,7 +89,7 @@ composer install --no-dev
 npm ci --ignore-scripts
 node node_modules/playwright/cli.js install --with-deps chromium firefox
 mkdir -p _build
-git clone --branch v0.7.0 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
+git clone --branch v0.8.0 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
 python3 tools/build_demo.py --output dist --html-source _build/html-source --draft
 python3 -m http.server 8080 --directory dist
 ```
@@ -88,7 +108,7 @@ PDFs, code, previews, exact HTML, diagnostics, capabilities and package provenan
 `assets/runtime-manifest.json` records the Composer/npm versions and runtime.
 Draft output cannot be used as a published documentation source.
 
-The build captures ten HTML previews through the real application, using
+The build captures eleven HTML previews through the real application, using
 `?sample=<id>` and its isolated result iframe. It waits for fonts and images,
 then captures the iframe body without changing the derived document. Poppler
 renders the original PDF previews separately. Each `files.htmlPreview` entry

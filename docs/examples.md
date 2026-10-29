@@ -3,8 +3,8 @@
 [English](examples.md) · [Français](examples.fr.md)
 
 The gallery is built from real PDF bytes and converted with the released
-`pdftoolkit/pdf-to-html` **0.7.0**, revision
-`c82bf04fd7a920e16abfd2eca19918176375a734`. Its HTML is the exact converter output.
+`pdftoolkit/pdf-to-html` **0.8.0**, revision
+`af80339e9199f80f07c22a27b24aece6acb07fa9`. Its HTML is the exact converter output.
 The application does not write replacement HTML to imitate a conversion.
 
 `src/Gallery/CaseFactory.php` creates six PDFs using explicit core objects:
@@ -12,34 +12,38 @@ content operators, fonts and metrics, a logical structure tree, parent-tree
 associations, attributes, associated files and AcroForm widgets. `PdfScene`
 serializes these objects. The header artwork is explicitly marked `Artifact`.
 An unchanged, published signature test fixture and three image PDFs authored by
-`ImageCaseFactory` bring the gallery to ten cases.
+`ImageCaseFactory`, plus an unchanged LuaLaTeX MathML structure fixture, bring
+the gallery to eleven cases.
 
 | Case ID | What to inspect | Conversion profile |
 | --- | --- | --- |
 | `structure` | Reading order, headings, selectable paragraphs, reflow; the decorative banner is absent from HTML. | `basic` |
 | `table-listes` | A caption, explicit column headers and `Headers` relationships, then a real numbered list. | `basic` |
-| `mathml` | A formula painted in the PDF and an embedded MathML alternative; the browser lays out its exponent and fraction. | `basic` |
+| `mathml` | A formula painted in the PDF and its associated MathML supplement; the browser lays out its exponent and fraction. | `basic` |
+| `mathml-se` | An actual LuaLaTeX document with MathML structure elements: inline and displayed fractions/exponents, then a two-by-two matrix. | `basic` |
 | `formulaire-reset` | Change Name and Language, then reset: Name becomes its PDF default Ada Lovelace; Language is outside the reset selection. | `reset` |
 | `apparences` | A native button with the PDF's normal, rollover and down appearances. | `rendering` |
 | `graphique` | A figure's bars, text and values are rendered together; neighbouring prose remains selectable HTML. | `rendering` |
 | `jpeg` | An original JPEG with an explicit PDF Decode inversion, actually decoded into PNG by PHP. | `basic` |
 | `jpeg2000` | The original RGB illustration, encoded losslessly as JP2 and decoded into PNG by PHP. | `basic` |
 | `jbig2` | A lossless monochrome illustration in a genuine JBIG2 generic MMR region. | `basic` |
-| `signature` | Open the native status popover by mouse or keyboard. The original PDF is checked against an explicitly chosen public test certificate. | `jpeg` | An original JPEG with an explicit PDF Decode inversion, actually decoded into PNG by PHP. | `basic` |
-| `jpeg2000` | The original RGB illustration, encoded losslessly as JP2 and decoded into PNG by PHP. | `basic` |
-| `jbig2` | A lossless monochrome illustration in a genuine JBIG2 generic MMR region. | `basic` |
-| `signature` |
+| `signature` | Open the native status popover by mouse or keyboard. The original PDF is checked against an explicitly chosen public test certificate. | `signature` |
 
-The explanatory interface is bilingual. These authored PDF samples use English
-ASCII text and Helvetica with explicit font metrics; they do not demonstrate all
+The explanatory interface is bilingual. The six core-authored PDF samples use English
+ASCII text and Helvetica with explicit font metrics; the LaTeX fixture embeds
+Latin Modern fonts and mathematical Unicode. Together, they do not demonstrate all
 writing systems, fonts or accessibility requirements. Table structure and
 alternative text are demonstrators, not an accessibility certification.
 
 ## Capabilities are explicit
 
-`basic` uses the library's safe default derivation policy, with strict validation
-of the source structure for the gallery build. It does not enable source PDF
-ECMAScript or remote resources. The basic PDFs, including all three image cases,
+`basic` explicitly enables filtered local stylesheets
+(`allowEmbeddedStylesheets`) and LaTeX catalogue supplement merging
+(`mergeCatalogHtmlSupplements`), with strict validation of the source structure
+for the gallery build. The other gallery profiles use the same stylesheet
+options. PDF scripts and remote resources remain disabled. The merge option is
+a documented interoperability choice for LaTeX documents containing separate
+list and alignment stylesheets. The basic PDFs, including all three image cases,
 are compared between native PHP and the browser's WebAssembly conversion.
 
 `reset` adds only `FormActionPolicy(allowReset: true)`. The converter emits a
@@ -65,11 +69,30 @@ the derived HTML. The certificate is intentionally self-signed and expired. The
 gallery copies only `signed-padded.pdf` and `signer.der` from the released fixture;
 it does not read or include a signing key. The status popover needs no JavaScript.
 
-Browser imports use a separate safe profile. They do not gain reset execution,
+Browser imports use the same local stylesheet options in a separate safe profile. They do not gain reset execution,
 a raster engine or a signature verifier merely because the gallery demonstrates
 those explicitly enabled capabilities. A PDF imported from a gallery card can
 therefore differ from that card's preconverted result when its profile is not
 `basic`.
+
+## Two ways to carry MathML
+
+The `mathml` example associates XML MathML with its PDF `Formula` using
+`AFRelationship=Supplement`. That MathML already exists inside the PDF; the
+converter includes it in HTML for the browser to display.
+
+The `mathml-se` example is an original document compiled by LuaLaTeX from TeX
+Live 2026 with `math/setup=mathml-SE`. Its mathematical tags are directly in the
+PDF structure tree, with no MathML associated XML file. The original PDF, actual
+TeX source and compiler/package provenance are downloadable. The converter's
+retained `mathml-se-af.pdf` test also contains both methods: its original
+structure IDs prove that SE wins over AF, without rendering a formula twice.
+
+The separate repository generator runs two passes in each of two clean
+directories and checks byte identity, with a fixed date, random seed and PDF
+identifiers. Building this demo uses retained files and needs no TeX installation.
+These small fixtures cover inline/display exponents and fractions, and a two-by-two
+matrix. They do not establish universal LaTeX or assistive-technology support.
 
 ## Image inputs and pixel evidence
 
@@ -116,12 +139,14 @@ Poppler and system fonts; the manifest records the actual Poppler version.
 ```sh
 composer install --no-dev --prefer-dist --no-interaction
 php bin/build-gallery.php --output dist/gallery \
-  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.2.1
+  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.3.0
 ```
 
 `--html-source` identifies the released HTML source checkout containing
 `tests/Fixtures/signatures/`. The builder verifies the exact retained SHA-256
-hashes of the PDF and certificate. The final gallery requires all ten cases.
+hashes of the PDF and certificate. It also reads the retained
+`tests/Fixtures/mathml-latex/` PDF, TeX source and compiler provenance. The final
+gallery requires all eleven cases.
 A final build also requires the exact clean Git HEAD of this demo repository;
 `--revision` can be omitted to read it directly. An optional `--pdftoppm` selects
 an explicit local executable.
@@ -148,6 +173,7 @@ native/WebAssembly equality are separate checks, not inferred by this oracle.
 The process is separated into objects:
 
 - `PdfNode`, `PdfScene`, `CaseFactory`: authoring and sample descriptions.
+- `LatexMathMlFixture`, `LatexMathMlFixtures`: verified LaTeX PDF, source and provenance.
 - `ImageFixture`, `ImageFixtures`, `ImageCaseFactory`: verified encoded inputs and tagged image pages.
 - `ReaderFactory`: bounded, explicit PHP image decoding shared by gallery and imports.
 - `GalleryConversion`: explicit policies and released converter calls.
@@ -169,14 +195,15 @@ Each case contains bilingual `title`, `description` and `observations`, its
 - `<id>/source.pdf`: original bytes.
 - `<id>/result.html.txt`: exact derived HTML, served as `text/plain`.
 - `<id>/page-1.png`: source PDF preview, with actual dimensions in `pages`.
-- `<id>/example.php.txt`: exact source factory, served as `text/plain`.
+- `<id>/example.php.txt`: exact source factory, served as `text/plain`. The
+  LaTeX case supplies its actual `example.tex.txt` and `latex-provenance.json`.
 - `<id>/diagnostics.json`: unfiltered converter diagnostics and input/output hashes.
 - Converter assets beside the HTML; the signature case also includes `signer.der`.
 
 Each file entry has `path`, `bytes`, `sha256` and `mediaType`. The root `assets`
 array inventories every delivered file except the manifest itself, including
 supporting source code. `source.kind` is either `generated` (this demo commit) or
-`published-fixture` (the exact HTML 0.7.0 fixture path). No loose `.html` document
+`published-fixture` (the exact HTML 0.8.0 fixture path). No loose `.html` document
 is generated by this builder. The surrounding application separately verifies
 and isolates previews; a filename or hash alone is not permission to execute a
 script.

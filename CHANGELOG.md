@@ -4,6 +4,33 @@
 
 ## Unreleased
 
+## 0.3.0 — 2026-10-29
+
+- Pin the released HTML 0.8.0 package and exact source revision, with stable
+  Reader/core/Codecs dependencies and matching native/WebAssembly provenance.
+- Expand the bilingual gallery to eleven actual conversions with a reproducible
+  LuaLaTeX MathML SE document. Keep its original PDF, TeX source and compiler
+  provenance together; retain the separate associated MathML example and explain
+  the two source representations without calling existing MathML “real”.
+- Enable filtered embedded stylesheets and the explicit LaTeX catalogue HTML
+  Supplement interoperability profile independently of scripts and remote
+  resources. Use the converter's bounded CSS and list-layout corrections.
+- Bring the selected or imported result into view, add result/gallery navigation
+  and expose source PDF downloads directly on example cards. Start FR/EN guides
+  with the practical steps for trying an example or importing a tagged PDF.
+- Keep original HTML source as the default. Offer an optional coloured, visually
+  indented view without inserting or deleting source characters, including
+  MathML whitespace. Copy and ZIP downloads retain the original bytes; bound
+  visual formatting to 1 MiB and 20,000 tokens.
+- Execute the verified WebAssembly loader bytes directly, preserve their module
+  URL base and distinguish runtime download, initialization, integrity and
+  conversion errors. Revalidate public runtime assets to avoid mixed cached
+  deployments. Imports remain local, transient and cancellable.
+- Extend Chromium/Firefox checks for the MathML SE gallery and actual browser
+  import, exact source formatting/copying, result navigation, direct PDF downloads
+  and startup failures. These regressions do not claim that the separately
+  reported Firefox 157 environment was reproduced.
+
 ## 0.2.1 — 2026-10-29
 
 - Scroll the containing preview iframe into view before the browser acceptance

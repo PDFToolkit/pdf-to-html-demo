@@ -50,7 +50,7 @@ class DemoBuild:
         manifest = {
             'schemaVersion': 1,
             'application': {'repository': 'https://github.com/PDFToolkit/pdf-to-html-demo',
-                            'version': '0.2.1', 'revision': self.args.revision, 'draft': self.args.draft},
+                            'version': '0.3.0', 'revision': self.args.revision, 'draft': self.args.draft},
             'htmlPackage': gallery['htmlPackage'],
             'gallery': 'gallery/gallery-manifest.json',
             'runtime': 'assets/runtime-manifest.json',
@@ -74,7 +74,7 @@ class DemoBuild:
                                        'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(),
                                        'mediaType': self.media_type(path)})
         (self.output / 'demo-manifest.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n')
-        print(json.dumps({'output': str(self.output), 'version': '0.2.1', 'revision': self.args.revision,
+        print(json.dumps({'output': str(self.output), 'version': '0.3.0', 'revision': self.args.revision,
                           'draft': self.args.draft, 'cases': len(gallery['cases']),
                           'assets': len(manifest['assets']), 'bytes': sum(item['bytes'] for item in manifest['assets'])}))
 
@@ -105,7 +105,7 @@ class DemoBuild:
 <body class="demo-shell"><header><a href="{doc}"><strong>◈ PDFToolkit</strong></a>
 <nav aria-label="{'Navigation' if french else 'Navigation'}"><a href="{doc}">Documentation</a><a href="https://github.com/PDFToolkit/pdf-to-html-demo">GitHub</a><a href="{language_link}" lang="{'en' if french else 'fr'}">{'English' if french else 'Français'}</a></nav></header>
 <main><h1>{title}</h1>{fragment}</main>
-<footer>PDFToolkit demo 0.2.1 · <a href="{base}demo-manifest.json">{'Versions et provenance' if french else 'Versions and provenance'}</a> · <a href="{base}assets/runtime/licenses/SOURCES.txt">{'Sources du moteur' if french else 'Runtime sources'}</a></footer></body></html>'''
+<footer>PDFToolkit demo 0.3.0 · <a href="{base}demo-manifest.json">{'Versions et provenance' if french else 'Versions and provenance'}</a> · <a href="{base}assets/runtime/licenses/SOURCES.txt">{'Sources du moteur' if french else 'Runtime sources'}</a></footer></body></html>'''
 
 
 if __name__ == '__main__':

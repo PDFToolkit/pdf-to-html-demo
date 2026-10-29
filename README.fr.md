@@ -6,22 +6,34 @@
 de vrais PDF avec leur HTML sémantique, interagir avec les résultats et convertir
 votre propre PDF balisé sans l’envoyer à un serveur.
 
-L’application utilise la version publiée, sans modification, de
-[`pdftoolkit/pdf-to-html` 0.7.0](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.7.0),
-avec ses dépendances Reader et core verrouillées. Un nouveau Worker PHP 8.3
-WebAssembly par conversion exécute les mêmes objets PHP qu’une application native.
-Le moteur doit déclarer des entiers 64 bits et les extensions DOM, mbstring, zlib
-et ZIP. La dérivation PDF n’est pas réécrite en JavaScript.
-
 ## Essayer
 
-Choisissez un exemple pour comparer son PDF source au véritable HTML obtenu.
-Consultez le code ou les diagnostics, manipulez les contrôles et téléchargez la
-source ou un ZIP contenant le HTML original et toutes ses ressources. Le
-[guide des exemples](docs/examples.fr.md) explique ce que chaque cas démontre.
+1. Choisissez un exemple. La page vous amène à son PDF et au résultat HTML.
+   **Voir le résultat** permet aussi de les rejoindre ; **Revenir aux exemples**
+   retourne à la galerie.
+2. Comparez le PDF original à la page web, puis essayez **Résultat HTML**,
+   **Code HTML** ou **Diagnostics**. Un diagnostic explique un contenu que le
+   convertisseur n’a pas pu conserver ou a dû adapter.
+3. Utilisez **Télécharger le PDF source** sur une carte, ou **Télécharger le PDF**
+   au-dessus du résultat. **Télécharger HTML + ressources** conserve le HTML
+   exact et ses fichiers associés dans un ZIP.
 
-Choisissez ou déposez un PDF balisé pour le convertir localement. Le moteur ne se
-télécharge qu’à la demande. Les fichiers restent dans la mémoire de la page et
+**Source originale** est sélectionnée par défaut et conserve la présentation
+initiale. Choisissez **Vue lisible** pour ajouter des couleurs et une indentation
+visuelle, sans ajouter ni supprimer de caractères dans le code. **Copier le HTML** et les téléchargements conservent la
+sortie exacte du convertisseur, y compris les espaces MathML. La mise en forme
+visuelle est limitée à 1 Mio et 20 000 fragments ; les résultats plus volumineux
+restent disponibles en source originale et en téléchargement.
+
+Le [guide des exemples](docs/examples.fr.md) décrit chaque cas. Un **PDF balisé**
+contient un ordre de lecture et des informations explicites sur les titres,
+listes et autres contenus. Commencez avec un PDF de la galerie si vous n’en avez
+pas.
+
+Choisissez ou déposez un PDF balisé pour le convertir à la demande dans votre
+navigateur. Les résultats de la galerie sont préparés à l’avance ; votre propre
+PDF est converti au moment de sa sélection. Le moteur ne se télécharge qu’à la
+demande. Les fichiers restent dans la mémoire de la page et
 du Worker : aucun point d’envoi, mesure d’audience, service worker, stockage
 persistant du navigateur ou collecte d’identifiants. Effacez le fichier ou fermez
 la page pour libérer la copie de l’application. L’annulation termine le Worker.
@@ -44,8 +56,12 @@ limites globales du Worker. Le consommateur HTML exige toujours un espace
 colorimétrique, une profondeur et une grille représentables ; les sémantiques
 image non prises en charge restent signalées. Cela n’ajoute pas de rendu de page.
 
-Les scripts PDF et ressources distantes sont désactivés. Le résultat apparaît
-dans une iframe isolée ; ses liens ne peuvent pas charger de destination distante.
+L’application active explicitement les CSS locales filtrées et le profil
+LaTeX documenté de fusion des Supplements du catalogue dans HTML 0.8.0. Ces
+options conservent les styles indépendamment de l’autorisation des scripts ;
+le convertisseur filtre toujours les fonctions de ressources et le CSS non
+pris en charge. Les scripts PDF et ressources distantes sont désactivés.
+Le résultat apparaît dans une iframe isolée ; ses liens ne peuvent pas charger de destination distante.
 Seul l’exemple de réinitialisation sélectionné active le runtime de formulaire de
 la bibliothèque, sans ECMAScript PDF. Son iframe n’a aucune permission d’origine
 partagée, d’envoi de formulaire, de fenêtre ou de navigation principale. Le
@@ -63,6 +79,13 @@ des modifications ultérieures.
 
 ## Construire et lancer
 
+L’application utilise la version publiée, sans modification, de
+[`pdftoolkit/pdf-to-html` 0.8.0](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.8.0),
+avec ses dépendances Reader et core verrouillées. Un nouveau Worker PHP 8.3
+WebAssembly par conversion exécute les mêmes objets PHP qu’une application native.
+Le moteur doit déclarer des entiers 64 bits et les extensions DOM, mbstring, zlib
+et ZIP. La dérivation PDF n’est pas réécrite en JavaScript.
+
 Prérequis : PHP 8.3+ 64 bits avec DOM, mbstring, zlib et OpenSSL ; Composer ; Node
 24.18+ et npm 11.16+ ; Python 3.13 ; Poppler `pdftoppm`. Le build nécessite aussi
 le Chromium épinglé par Playwright 1.62.1 pour capturer les véritables aperçus
@@ -75,7 +98,7 @@ composer install --no-dev
 npm ci --ignore-scripts
 node node_modules/playwright/cli.js install --with-deps chromium firefox
 mkdir -p _build
-git clone --branch v0.7.0 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
+git clone --branch v0.8.0 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
 python3 tools/build_demo.py --output dist --html-source _build/html-source --draft
 python3 -m http.server 8080 --directory dist
 ```
@@ -96,7 +119,7 @@ provenance des packages. `assets/runtime-manifest.json` conserve les versions
 Composer/npm et du moteur. Une sortie de travail ne peut pas devenir une source
 de documentation publiée.
 
-Le build capture dix aperçus HTML dans la véritable application, avec
+Le build capture onze aperçus HTML dans la véritable application, avec
 `?sample=<id>` et son iframe de résultat isolée. Il attend les polices et images,
 puis capture le body de l’iframe sans modifier le document dérivé. Poppler rend
 séparément les aperçus PDF originaux. Chaque entrée `files.htmlPreview` consigne

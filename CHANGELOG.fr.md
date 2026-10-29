@@ -4,6 +4,38 @@
 
 ## Non publié
 
+## 0.3.0 — 2026-10-29
+
+- Épingler le package HTML 0.8.0 publié et sa révision source exacte, avec les
+  dépendances stables Reader/core/Codecs et leur provenance native/WebAssembly.
+- Porter la galerie bilingue à onze conversions réelles avec un document
+  LuaLaTeX MathML SE reproductible. Conserver ensemble son PDF original, sa
+  source TeX et la provenance du compilateur ; garder l’exemple MathML associé
+  distinct et expliquer les deux représentations sans qualifier de « vrai »
+  du MathML déjà présent dans le PDF.
+- Activer les feuilles incorporées filtrées et le profil explicite
+  d’interopérabilité des Supplements HTML du catalogue LaTeX, indépendamment des
+  scripts et ressources distantes. Utiliser les corrections CSS bornées et de
+  présentation des listes du convertisseur.
+- Amener le résultat choisi ou importé dans la zone visible, ajouter la navigation
+  résultat/galerie et proposer le PDF source directement sur chaque fiche.
+  Commencer les guides FR/EN par les étapes pratiques pour essayer un exemple
+  ou importer un PDF balisé.
+- Garder le HTML original comme vue par défaut. Proposer une vue colorée avec
+  indentation visuelle optionnelle, sans ajouter ni retirer de caractères,
+  notamment les espaces MathML. Copie et ZIP conservent les octets originaux ;
+  borner la présentation à 1 Mio et 20 000 jetons.
+- Exécuter directement les octets vérifiés du chargeur WebAssembly, conserver sa
+  base d’URL de module et distinguer téléchargement, initialisation, intégrité
+  et conversion dans les erreurs. Revalider les ressources publiques pour éviter
+  de mélanger des déploiements en cache. Les imports restent locaux, temporaires
+  et annulables.
+- Étendre les contrôles Chromium/Firefox à la galerie MathML SE et à son import
+  navigateur réel, à la présentation/copie exacte du code, à la navigation vers
+  les résultats, aux téléchargements directs et aux échecs de démarrage. Ces
+  régressions ne prétendent pas reproduire l’environnement Firefox 157 signalé
+  séparément.
+
 ## 0.2.1 — 2026-10-29
 
 - Faire défiler l’iframe d’aperçu dans la zone visible avant que le test navigateur

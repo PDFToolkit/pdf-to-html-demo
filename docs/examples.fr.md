@@ -3,8 +3,8 @@
 [English](examples.md) · [Français](examples.fr.md)
 
 La galerie part de véritables octets PDF et les convertit avec la version publiée
-**0.7.0** de `pdftoolkit/pdf-to-html`, révision
-`c82bf04fd7a920e16abfd2eca19918176375a734`. Son HTML est la sortie exacte du
+**0.8.0** de `pdftoolkit/pdf-to-html`, révision
+`af80339e9199f80f07c22a27b24aece6acb07fa9`. Son HTML est la sortie exacte du
 convertisseur. L’application ne fabrique pas du HTML pour simuler une conversion.
 
 `src/Gallery/CaseFactory.php` crée six PDF avec des objets explicites du core :
@@ -12,35 +12,39 @@ opérateurs de contenu, polices et métriques, arbre de structure logique, relat
 ParentTree, attributs, fichiers associés et widgets AcroForm. `PdfScene` sérialise
 ces objets. Le bandeau décoratif est explicitement marqué `Artifact`. Le septième
 PDF est un cas de test de signature publié, conservé sans modification. Trois
-PDF image créés par `ImageCaseFactory` portent la galerie à dix cas.
+PDF image créés par `ImageCaseFactory` et un PDF LuaLaTeX conservé sans
+modification portent la galerie à onze cas.
 
 | Identifiant | Points à observer | Profil de conversion |
 | --- | --- | --- |
 | `structure` | Ordre de lecture, titres, paragraphes sélectionnables, retour à la ligne ; le bandeau décoratif est absent du HTML. | `basic` |
 | `table-listes` | Légende, en-têtes de colonnes et relations `Headers` explicites, puis une véritable liste numérotée. | `basic` |
-| `mathml` | Une formule peinte dans le PDF et une alternative MathML incorporée ; le navigateur compose son exposant et sa fraction. | `basic` |
+| `mathml` | Une formule peinte dans le PDF et son supplément MathML associé ; le navigateur compose son exposant et sa fraction. | `basic` |
+| `mathml-se` | Un vrai document LuaLaTeX avec des éléments de structure MathML : exposants/fractions dans le texte et centrés, puis matrice deux par deux. | `basic` |
 | `formulaire-reset` | Modifier Name et Language, puis réinitialiser : Name reprend sa valeur PDF par défaut Ada Lovelace ; Language reste hors de la sélection. | `reset` |
 | `apparences` | Un bouton natif avec les apparences PDF normale, de survol et d’appui. | `rendering` |
 | `graphique` | Barres, texte et valeurs d’une figure sont rendus ensemble ; le texte voisin reste du HTML sélectionnable. | `rendering` |
 | `jpeg` | Un JPEG original et une inversion Decode PDF explicite, réellement décodé en PNG par PHP. | `basic` |
 | `jpeg2000` | Le dessin RGB original, codé sans perte en JP2 puis décodé en PNG par PHP. | `basic` |
 | `jbig2` | Un dessin monochrome sans perte dans une véritable région générique MMR de JBIG2. | `basic` |
-| `signature` | Ouvrir le statut natif par souris ou clavier. Le PDF original est contrôlé avec un certificat public de test explicitement choisi. | `jpeg` | Un JPEG original et une inversion Decode PDF explicite, réellement décodé en PNG par PHP. | `basic` |
-| `jpeg2000` | Le dessin RGB original, codé sans perte en JP2 puis décodé en PNG par PHP. | `basic` |
-| `jbig2` | Un dessin monochrome sans perte dans une véritable région générique MMR de JBIG2. | `basic` |
-| `signature` |
+| `signature` | Ouvrir le statut natif par souris ou clavier. Le PDF original est contrôlé avec un certificat public de test explicitement choisi. | `signature` |
 
-L’interface explicative est bilingue. Les PDF créés utilisent du texte anglais
-ASCII et Helvetica avec des métriques explicites ; ils ne démontrent pas tous
-les systèmes d’écriture, toutes les polices ou toutes les exigences
+L’interface explicative est bilingue. Les six PDF créés avec le core utilisent
+du texte anglais ASCII et Helvetica avec des métriques explicites ; le cas
+LaTeX incorpore Latin Modern et des caractères mathématiques Unicode. Ces
+exemples ne démontrent pas tous les systèmes d’écriture, polices ou exigences
 d’accessibilité. La structure du tableau et les textes alternatifs sont des
 exemples, pas une certification d’accessibilité.
 
 ## Des capacités explicites
 
-`basic` utilise la politique de dérivation sûre par défaut, avec validation
-stricte de la structure source pour le build de la galerie. Il n’active ni
-ECMAScript PDF ni ressources distantes. Les PDF basiques, dont les trois cas
+`basic` active explicitement les feuilles de style locales filtrées
+(`allowEmbeddedStylesheets`) et la fusion des suppléments du catalogue LaTeX
+(`mergeCatalogHtmlSupplements`), avec validation stricte de la structure source
+pour le build de la galerie. Les autres profils de galerie utilisent les mêmes
+options de style. Les scripts PDF et ressources distantes restent désactivés.
+La fusion constitue un choix d’interopérabilité documenté pour les documents
+LaTeX qui contiennent des feuilles séparées pour les listes et alignements. Les PDF basiques, dont les trois cas
 image, sont comparés entre PHP natif et la conversion WebAssembly du navigateur.
 
 `reset` ajoute uniquement `FormActionPolicy(allowReset: true)`. Le convertisseur
@@ -67,11 +71,32 @@ auto-signé et expiré. La galerie copie seulement `signed-padded.pdf` et
 `signer.der` du cas publié ; elle ne lit ni n’inclut de clé de signature. Le statut
 natif ne nécessite pas de JavaScript.
 
-Les imports du navigateur utilisent un profil sûr distinct. Ils ne reçoivent
+Les imports du navigateur utilisent les mêmes options de styles locaux dans un profil sûr distinct. Ils ne reçoivent
 pas d’exécution reset, de moteur raster ou de vérificateur de signature parce
 que la galerie démontre ces capacités explicitement activées. Un PDF importé
 depuis une fiche peut donc produire un résultat différent de sa conversion
 préparée lorsque son profil n’est pas `basic`.
+
+## Deux façons de conserver le MathML
+
+Le cas `mathml` associe du XML MathML à sa `Formula` PDF selon
+`AFRelationship=Supplement`. Ce MathML existe déjà dans le PDF ; le convertisseur
+le reprend dans le HTML pour que le navigateur l’affiche.
+
+Le cas `mathml-se` est un document original compilé par LuaLaTeX TeX Live 2026
+avec `math/setup=mathml-SE`. Ses balises mathématiques sont directement dans
+l’arbre de structure PDF, sans fichier XML MathML associé. Le PDF original, la
+vraie source TeX et la provenance du compilateur/paquets sont téléchargeables.
+Le test conservé `mathml-se-af.pdf` du convertisseur contient les deux méthodes :
+ses identifiants de structure originaux prouvent la priorité des SE sur les AF,
+sans afficher deux fois la formule.
+
+Le générateur du dépôt exécute deux passes dans chacun de deux dossiers propres
+et vérifie l’identité des octets, avec date, graine aléatoire et identifiants PDF
+fixes. Le build de la démo utilise les fichiers conservés sans installation TeX.
+Ces exemples couvrent les exposants et fractions dans le texte ou centrés, et
+une matrice deux par deux. Ils ne prouvent pas une prise en charge universelle
+de LaTeX ou des technologies d’assistance.
 
 ## Images sources et preuves des pixels
 
@@ -122,12 +147,14 @@ réelle de Poppler.
 ```sh
 composer install --no-dev --prefer-dist --no-interaction
 php bin/build-gallery.php --output dist/gallery \
-  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.2.1
+  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.3.0
 ```
 
 `--html-source` désigne le checkout publié du module HTML contenant
 `tests/Fixtures/signatures/`. Le builder vérifie les empreintes SHA-256 exactes
-retenues du PDF et du certificat. La galerie finale exige les dix cas.
+retenues du PDF et du certificat. Il lit aussi le PDF, la source TeX et la
+provenance du compilateur conservés sous `tests/Fixtures/mathml-latex/`. La
+galerie finale exige les onze cas.
 Le build final exige aussi le Git HEAD exact et propre du dépôt de démo ;
 `--revision` peut être omis pour le lire directement. `--pdftoppm` permet de
 choisir explicitement l’exécutable local.
@@ -156,6 +183,7 @@ natif/WebAssembly sont des contrôles distincts que cet oracle ne déduit pas.
 Le processus est réparti entre objets :
 
 - `PdfNode`, `PdfScene`, `CaseFactory` : création et description des exemples.
+- `LatexMathMlFixture`, `LatexMathMlFixtures` : PDF LaTeX, source et provenance vérifiés.
 - `ImageFixture`, `ImageFixtures`, `ImageCaseFactory` : entrées compressées vérifiées et pages image balisées.
 - `ReaderFactory` : décodage image PHP explicite et borné commun à la galerie et aux imports.
 - `GalleryConversion` : politiques explicites et appels du convertisseur publié.
@@ -179,13 +207,14 @@ bilingues, son `profile`, ses `capabilities`, sa provenance, ses caractéristiqu
 - `<id>/result.html.txt` : HTML dérivé exact, servi en `text/plain`.
 - `<id>/page-1.png` : aperçu du PDF source, dimensions réelles dans `pages`.
 - `<id>/example.php.txt` : code exact de la fabrique, servi en `text/plain`.
+  Le cas LaTeX fournit sa vraie source `example.tex.txt` et `latex-provenance.json`.
 - `<id>/diagnostics.json` : diagnostics intégraux et empreintes de l’entrée et de la sortie.
 - Ressources du convertisseur à côté du HTML ; le cas de signature inclut aussi `signer.der`.
 
 Chaque fichier comporte `path`, `bytes`, `sha256` et `mediaType`. Le tableau racine
 `assets` inventorie tous les fichiers livrés sauf le manifeste lui-même, y
 compris le code auxiliaire. `source.kind` vaut `generated` (commit de cette démo)
-ou `published-fixture` (chemin exact du cas HTML 0.7.0). Ce builder ne produit aucun
+ou `published-fixture` (chemin exact du cas HTML 0.8.0). Ce builder ne produit aucun
 document `.html` directement navigable. L’application vérifie et isole les
 aperçus séparément ; un nom de fichier ou une empreinte ne constitue pas à lui
 seul une autorisation d’exécuter un script.
