@@ -87,7 +87,8 @@ class GalleryBrowserPreview {
         assert(bounds.scrollWidth <= this.frameWidth, sample.id + ': the capture viewport must not clip horizontal content.');
         await frameElement.evaluate((element, height) => { element.style.height = height + 'px'; element.style.minHeight = '0'; }, bounds.height);
         await frame.locator('body').waitFor({state: 'visible'});
-        // Passive sandbox frames cannot run requestAnimationFrame callbacks.
+        // Off-screen passive frames can throttle the callbacks used by screenshot stability checks.
+        await frameElement.scrollIntoViewIfNeeded();
         await page.waitForTimeout(100);
         const filename = `${sample.id}/html-preview.png`;
         const temporary = path.join(this.gallery, sample.id, 'html-preview.building.png');
