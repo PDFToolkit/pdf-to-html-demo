@@ -25,7 +25,7 @@
 - Keep the JPEG 2000 gallery witness at 160 × 80 pixels for slower WebAssembly
   runtimes, with an independent lossless reference and the unchanged 30-second
   Worker deadline. Retain import duration, failure messages and screenshots in
-  browser evidence.
+  browser evidence. Startup errors no longer assume an outdated browser.
 
 ## 0.1.0 — 2026-10-28
 

@@ -129,6 +129,7 @@ class BrowserChecks {
       await page.getByRole('button', {name: 'Clear my file', exact: true}).click();
       check('Clear removes the file and result from the interface', await page.locator('input[type=file]').evaluate(element => element.files.length === 0));
       await this.raceChecks(context, en, assetBase, pdf, check);
+      await this.startupChecks(context, en, fr, pdf, check, record, name);
       const isolation = await page.evaluate(async moduleUrl => {
         const {PreviewDocument} = await import(moduleUrl);
         const urls = [];
@@ -219,6 +220,31 @@ class BrowserChecks {
       check(id + ': no source bytes or filenames leave the page', requests.slice(requestStart).every(request => request.method === 'GET' && !request.body && new URL(request.url).origin === this.base.origin && !request.url.includes(id + '.pdf')));
       await screenshot('wasm-' + id);
       Object.assign(conversion, {nativeHtmlSha256: crypto.createHash('sha256').update(html).digest('hex'), assets: hashes, passed: true});
+    }
+  }
+  async startupChecks(context, en, fr, pdf, check, record, browserName) {
+    record.startupFailures = [];
+    for (const [language, url, prefix] of [
+      ['en', en, 'The local conversion engine could not load or run.'],
+      ['fr', fr, 'Le moteur de conversion local n’a pas pu se charger ou s’exécuter.'],
+    ]) {
+      const page = await context.newPage();
+      try {
+        await page.route('**/assets/conversion-worker.js', route => route.abort('blockedbyclient'));
+        await page.goto(url.href);
+        await page.locator('.demo-sample').first().waitFor();
+        await page.locator('input[type=file]').setInputFiles({name: 'blocked-worker.pdf', mimeType: 'application/pdf', buffer: pdf});
+        await page.waitForFunction(() => document.querySelector('.demo-status')?.dataset.error === 'true');
+        const status = await page.locator('.demo-status').textContent();
+        check(language + ': blocked Worker reports a localized startup failure without blaming the browser version',
+          status.startsWith(prefix) && status.includes('WebAssembly') && status.includes('Worker')
+          && await page.locator('[data-demo-root]').getAttribute('aria-busy') === 'false'
+          && await page.locator('.demo-workspace iframe').count() === 0);
+        const filename = browserName + '-startup-' + language + '.png';
+        await page.screenshot({path: path.join(this.output, filename), fullPage: true});
+        record.screenshots.push(filename);
+        record.startupFailures.push({language, status, passed: true});
+      } finally { await page.close(); }
     }
   }
   async raceChecks(context, url, assetBase, pdf, check) {
