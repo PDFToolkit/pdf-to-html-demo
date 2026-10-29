@@ -20,12 +20,19 @@ final class ConversionChecks
             $pdf = file_get_contents(__DIR__ . '/Fixtures/tagged.pdf');
             $output = $this->convert($pdf, 'tagged.pdf');
             $this->same(true, $output['ok']);
-            $this->same('05ce206b7c078c22686a07b26d2dd88da792318a045b2862c2a7208c747ff19b', hash('sha256', $output['result']['html']));
+            $this->same('d93530bd66743b455f7db83f64169747f3f741d8f8ca3e7f0248d88627c79aca', hash('sha256', $output['result']['html']));
             $this->same(false, str_contains($output['result']['html'], '<script'));
-            $this->same(1, count($output['result']['assets']));
-            $this->same('image/png', $output['result']['assets'][0]['mediaType']);
-            $this->same('b1ff9c8ea3a780bad09b346c423d2d0e46815926879b18e841d928376a946640', hash('sha256', base64_decode($output['result']['assets'][0]['base64'], true)));
-            $this->same('scripts-disabled', $output['result']['diagnostics'][0]['code']);
+            $this->same(false, str_contains($output['result']['html'], 'sourceOnly'));
+            $this->same(0, preg_match('~(?:src|href)="(?:https?:|//|javascript:)~i', $output['result']['html']));
+            $this->same(2, count($output['result']['assets']));
+            $image = $this->asset($output['result'], 'image/png');
+            $this->same('b1ff9c8ea3a780bad09b346c423d2d0e46815926879b18e841d928376a946640', hash('sha256', base64_decode($image['base64'], true)));
+            $stylesheet = $this->asset($output['result'], 'text/css');
+            $this->same('theme.css', $stylesheet['filename']);
+            $this->same('.lead{color:#123456}', base64_decode($stylesheet['base64'], true));
+            $this->same(1, substr_count($output['result']['html'], '<link rel="stylesheet" type="text/css" href="theme.css">'));
+            $this->same(true, str_contains($output['result']['html'], 'class="lead"'));
+            $this->same(['scripts-disabled'], array_column($output['result']['diagnostics'], 'code'));
             $this->error('', 'empty.pdf', 'file_size');
             $this->error('This is not a PDF', 'text.pdf', 'invalid_pdf');
             $this->error("%PDF-1.7\ninvalid", 'invalid.pdf', 'invalid_pdf');
@@ -66,6 +73,13 @@ final class ConversionChecks
     {
         if ($expected !== $actual) throw new RuntimeException('Unexpected result: ' . json_encode([$expected, $actual]));
         ++$this->checks;
+    }
+
+    private function asset(array $result, string $mediaType): array
+    {
+        $assets = array_values(array_filter($result['assets'], static fn (array $asset): bool => $asset['mediaType'] === $mediaType));
+        $this->same(1, count($assets));
+        return $assets[0];
     }
 
     private function untagged(): string
