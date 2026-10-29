@@ -84,11 +84,7 @@ class BrowserChecks {
           check('The chosen-certificate status is integrity-verified, not PKI trust', await frame.locator('[data-pdf-signature-status="integrity-verified"]').count() > 0);
         }
         if (sample.id === 'apparences') {
-          const button = frame.locator('button').first();
-          await button.scrollIntoViewIfNeeded(); await page.mouse.move(0, 0);
-          const normal = await button.screenshot(); await button.hover(); const hover = await button.screenshot();
-          await page.mouse.down(); const pressed = await button.screenshot(); await page.mouse.up();
-          check('Normal, hover and pressed widget appearances are visibly different', !normal.equals(hover) && !hover.equals(pressed));
+          await this.widgetAppearances(page, frame, check, record);
         }
         await screenshot(sample.id);
         await page.getByRole('tab', {name: 'HTML code', exact: true}).click();
@@ -167,6 +163,37 @@ class BrowserChecks {
       await screenshot('failure').catch(() => {});
       throw error;
     } finally { await browser.close(); }
+  }
+  async widgetAppearances(page, frame, check, record) {
+    const iframe = page.locator('iframe[title="Derived HTML"]');
+    const viewport = page.viewportSize();
+    const geometry = () => iframe.evaluate(element => {
+      const {top, bottom} = element.getBoundingClientRect();
+      return {top, bottom, viewportHeight: innerHeight, scrollY};
+    });
+    const evidence = record.widgetAppearances = {passed: false};
+    try {
+      // A short viewport reproduces the off-screen parent in both hosting layouts.
+      await page.setViewportSize({width: viewport.width, height: 200});
+      await page.evaluate(() => window.scrollTo({top: 0, left: 0, behavior: 'instant'}));
+      evidence.before = await geometry();
+      check('Widget regression starts with its parent iframe outside the viewport',
+        evidence.before.top >= evidence.before.viewportHeight || evidence.before.bottom <= 0);
+      await iframe.scrollIntoViewIfNeeded();
+      evidence.after = await geometry();
+      check('The parent iframe is scrolled into view before interacting with its widget',
+        evidence.after.top < evidence.after.viewportHeight && evidence.after.bottom > 0);
+    } finally { await page.setViewportSize(viewport); }
+    await iframe.scrollIntoViewIfNeeded();
+    const button = frame.locator('button').first();
+    await button.scrollIntoViewIfNeeded(); await page.mouse.move(0, 0);
+    const normal = await button.screenshot(); await button.hover(); const hover = await button.screenshot();
+    await page.mouse.down(); const pressed = await button.screenshot(); await page.mouse.up();
+    check('Normal, hover and pressed widget appearances are visibly different',
+      !normal.equals(hover) && !hover.equals(pressed) && !normal.equals(pressed));
+    evidence.sha256 = Object.fromEntries(Object.entries({normal, hover, pressed})
+      .map(([state, bytes]) => [state, crypto.createHash('sha256').update(bytes).digest('hex')]));
+    evidence.passed = true;
   }
   async imageImports(page, context, manifest, galleryBase, requests, check, screenshot, record) {
     record.imageCodecs = [];
