@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-## 0.2.0 — 2026-10-28
+## 0.2.0 — 2026-10-29
 
 - Use released HTML 0.7, Reader 0.7, core 0.12.1 and optional PHP Codecs 0.1,
   retaining all four exact source/distribution identities in the runtime manifest.
