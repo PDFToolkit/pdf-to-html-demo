@@ -8,6 +8,11 @@ on:
 permissions:
   contents: read
 
+# Explicit bash enables pipefail so tee cannot hide a failing PHP check.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   php:
     name: PHP ${{ matrix.php }}
