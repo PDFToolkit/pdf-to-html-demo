@@ -3,8 +3,8 @@
 [English](examples.md) · [Français](examples.fr.md)
 
 La galerie part de véritables octets PDF et les convertit avec la version publiée
-**0.8.0** de `pdftoolkit/pdf-to-html`, révision
-`af80339e9199f80f07c22a27b24aece6acb07fa9`. Son HTML est la sortie exacte du
+**0.8.1** de `pdftoolkit/pdf-to-html`, révision
+`b60a1816de2a340fdf9ddd01c4ac70d4f40f5d2f`. Son HTML est la sortie exacte du
 convertisseur. L’application ne fabrique pas du HTML pour simuler une conversion.
 
 `src/Gallery/CaseFactory.php` crée six PDF avec des objets explicites du core :
@@ -214,7 +214,7 @@ bilingues, son `profile`, ses `capabilities`, sa provenance, ses caractéristiqu
 Chaque fichier comporte `path`, `bytes`, `sha256` et `mediaType`. Le tableau racine
 `assets` inventorie tous les fichiers livrés sauf le manifeste lui-même, y
 compris le code auxiliaire. `source.kind` vaut `generated` (commit de cette démo)
-ou `published-fixture` (chemin exact du cas HTML 0.8.0). Ce builder ne produit aucun
+ou `published-fixture` (chemin exact du cas HTML 0.8.1). Ce builder ne produit aucun
 document `.html` directement navigable. L’application vérifie et isole les
 aperçus séparément ; un nom de fichier ou une empreinte ne constitue pas à lui
 seul une autorisation d’exécuter un script.

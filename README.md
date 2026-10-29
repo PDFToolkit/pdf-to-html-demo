@@ -52,7 +52,7 @@ requires a representable colour space, depth and sampling grid; unsupported
 image semantics remain explicit diagnostics. This does not add page rendering.
 
 The application explicitly enables filtered local CSS and the documented LaTeX
-catalogue Supplement merging profile from HTML 0.8.0. These options preserve
+catalogue Supplement merging profile from HTML 0.8.1. These options preserve
 styles independently of script permission; the converter still filters resource
 functions and unsupported CSS. PDF scripts and remote resources are disabled.
 Results appear in an isolated
@@ -72,7 +72,7 @@ not establish PKI trust or permission for later changes.
 ## Build and run
 
 The application uses the unmodified, released
-[`pdftoolkit/pdf-to-html` 0.8.0](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.8.0)
+[`pdftoolkit/pdf-to-html` 0.8.1](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.8.1)
 with its locked Reader and core dependencies. A fresh PHP 8.3 WebAssembly Worker
 per conversion runs the same PHP objects used by a native application. The
 runtime must report 64-bit integers and DOM, mbstring, zlib and ZIP support.
@@ -89,7 +89,7 @@ composer install --no-dev
 npm ci --ignore-scripts
 node node_modules/playwright/cli.js install --with-deps chromium firefox
 mkdir -p _build
-git clone --branch v0.8.0 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
+git clone --branch v0.8.1 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
 python3 tools/build_demo.py --output dist --html-source _build/html-source --draft
 python3 -m http.server 8080 --directory dist
 ```

@@ -6,7 +6,7 @@
 
 ## 0.3.0 — 2026-10-29
 
-- Épingler le package HTML 0.8.0 publié et sa révision source exacte, avec les
+- Épingler le package HTML 0.8.1 publié et sa révision source exacte, avec les
   dépendances stables Reader/core/Codecs et leur provenance native/WebAssembly.
 - Porter la galerie bilingue à onze conversions réelles avec un document
   LuaLaTeX MathML SE reproductible. Conserver ensemble son PDF original, sa

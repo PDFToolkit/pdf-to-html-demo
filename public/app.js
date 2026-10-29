@@ -450,7 +450,7 @@ class DemoApplication {
       this.artifact = {sample, title: sample.title[this.language], description: sample.description[this.language],
         html: new TextDecoder().decode(html), pdf, filename: sample.id + '.pdf', diagnostics: messages, assets,
         previews, code: new TextDecoder().decode(code), trustedReset: sample.profile === 'reset',
-        version: this.manifest.htmlPackage?.version || this.manifest.runtime?.pdfToHtmlVersion || '0.8.0'};
+        version: this.manifest.htmlPackage?.version || this.manifest.runtime?.pdfToHtmlVersion || '0.8.1'};
       this.samples.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.sample === sample.id)));
       this.selectedTab = 'compare'; this.renderArtifact(); this.status(this.t.idle);
       if (updateUrl) { const url = new URL(location.href); url.searchParams.set('sample', sample.id); history.replaceState(null, '', url); this.showResult(); }
@@ -478,7 +478,7 @@ class DemoApplication {
         return {filename: asset.filename, mediaType: asset.mediaType, bytes: Uint8Array.from(atob(asset.base64), c => c.charCodeAt(0))};
       });
       this.artifact = {title: file.name, description: this.t.inputDescription, html: result.html, assets, diagnostics: result.diagnostics,
-        filename: file.name, pdf: bytes, previews: [], trustedReset: false, version: '0.8.0', durationMs: response.meta?.durationMs};
+        filename: file.name, pdf: bytes, previews: [], trustedReset: false, version: '0.8.1', durationMs: response.meta?.durationMs};
       this.selectedTab = 'html'; this.renderArtifact(); this.status(this.t.complete); this.showResult();
     } catch (error) {
       if (generation !== this.generation || error.code === 'cancelled') return;

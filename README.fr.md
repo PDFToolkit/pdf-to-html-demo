@@ -57,7 +57,7 @@ colorimétrique, une profondeur et une grille représentables ; les sémantiques
 image non prises en charge restent signalées. Cela n’ajoute pas de rendu de page.
 
 L’application active explicitement les CSS locales filtrées et le profil
-LaTeX documenté de fusion des Supplements du catalogue dans HTML 0.8.0. Ces
+LaTeX documenté de fusion des Supplements du catalogue dans HTML 0.8.1. Ces
 options conservent les styles indépendamment de l’autorisation des scripts ;
 le convertisseur filtre toujours les fonctions de ressources et le CSS non
 pris en charge. Les scripts PDF et ressources distantes sont désactivés.
@@ -80,7 +80,7 @@ des modifications ultérieures.
 ## Construire et lancer
 
 L’application utilise la version publiée, sans modification, de
-[`pdftoolkit/pdf-to-html` 0.8.0](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.8.0),
+[`pdftoolkit/pdf-to-html` 0.8.1](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.8.1),
 avec ses dépendances Reader et core verrouillées. Un nouveau Worker PHP 8.3
 WebAssembly par conversion exécute les mêmes objets PHP qu’une application native.
 Le moteur doit déclarer des entiers 64 bits et les extensions DOM, mbstring, zlib
@@ -98,7 +98,7 @@ composer install --no-dev
 npm ci --ignore-scripts
 node node_modules/playwright/cli.js install --with-deps chromium firefox
 mkdir -p _build
-git clone --branch v0.8.0 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
+git clone --branch v0.8.1 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
 python3 tools/build_demo.py --output dist --html-source _build/html-source --draft
 python3 -m http.server 8080 --directory dist
 ```

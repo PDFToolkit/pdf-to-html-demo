@@ -6,7 +6,7 @@
 
 ## 0.3.0 — 2026-10-29
 
-- Pin the released HTML 0.8.0 package and exact source revision, with stable
+- Pin the released HTML 0.8.1 package and exact source revision, with stable
   Reader/core/Codecs dependencies and matching native/WebAssembly provenance.
 - Expand the bilingual gallery to eleven actual conversions with a reproducible
   LuaLaTeX MathML SE document. Keep its original PDF, TeX source and compiler

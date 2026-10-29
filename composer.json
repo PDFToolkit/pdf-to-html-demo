@@ -9,7 +9,7 @@
     "ext-dom": "*",
     "ext-mbstring": "*",
     "ext-zlib": "*",
-    "pdftoolkit/pdf-to-html": "0.8.0",
+    "pdftoolkit/pdf-to-html": "0.8.1",
     "pdftoolkit/pdf-codecs": "0.1.0"
   },
   "autoload": {
