@@ -45,7 +45,8 @@ class BrowserChecks {
       const assetBase = new URL(await page.locator('[data-demo-root]').getAttribute('data-demo-base'), en);
       const galleryBase = new URL('gallery/', assetBase);
       const manifest = await (await context.request.get(new URL('gallery-manifest.json', galleryBase).href)).json();
-      check('Ten real PDF examples are available', manifest.cases.length === 10 && await page.locator('.demo-sample').count() === 10);
+      check('Eleven real PDF examples are available, including a LaTeX MathML structure example', manifest.cases.length === 11
+        && manifest.cases.some(sample => sample.id === 'mathml-se') && await page.locator('.demo-sample').count() === 11);
       check('No PHP runtime is fetched just to browse the gallery', !requests.some(item => /\.wasm(?:\.gz)?$|application\.zip/.test(item.url)));
       check('Every gallery card offers its own source PDF download', await page.locator('.demo-sample-download[download]').count() === manifest.cases.length);
       await page.getByRole('button', {name: 'See the result', exact: true}).click();
@@ -73,6 +74,7 @@ class BrowserChecks {
           });
           check('MathML uses its native namespace and stacked fraction layout', math.namespace === 'http://www.w3.org/1998/Math/MathML' && math.numeratorAbove && math.width > 0);
         }
+        if (sample.id === 'mathml-se') await this.mathMlStructure(frame, check, record, 'gallery');
         if (sample.profile === 'reset') {
           const field = frame.locator('input[name="Name"]');
           assert.equal(await field.inputValue(), 'Grace Hopper');
@@ -125,6 +127,16 @@ class BrowserChecks {
       const download = await downloadEvent; const zip = unzipSync(await fs.readFile(await download.path()));
       assert.equal(Buffer.from(zip['document.html']).toString(), expected);
       check('Downloaded ZIP contains exact HTML and explicit diagnostics', !!zip['diagnostics.json']);
+      const structureSample = manifest.cases.find(sample => sample.id === 'mathml-se');
+      const structurePdf = await (await context.request.get(new URL(structureSample.files.pdf.path, galleryBase).href)).body();
+      const structureHtml = await (await context.request.get(new URL(structureSample.files.html.path, galleryBase).href)).text();
+      await page.locator('input[type=file]').setInputFiles({name: 'mathml-se.pdf', mimeType: 'application/pdf', buffer: structurePdf});
+      await page.waitForFunction(() => document.querySelector('.demo-status')?.textContent.includes('Conversion complete'), null, {timeout: 45000});
+      await this.mathMlStructure(page.frameLocator('iframe[title="Derived HTML"]'), check, record, 'wasm-import');
+      await page.getByRole('tab', {name: 'HTML code', exact: true}).click();
+      assert.equal(await page.locator('.demo-code').textContent(), structureHtml);
+      check('The LaTeX PDF with MathML structure converts in WebAssembly to the exact native HTML');
+      await screenshot('wasm-mathml-se');
       await this.imageImports(page, context, manifest, galleryBase, requests, check, screenshot, record);
       await page.locator('input[type=file]').setInputFiles({name: 'private-name-never-sent.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\ninvalid')});
       await page.waitForFunction(() => document.querySelector('.demo-status')?.dataset.error === 'true', null, {timeout: 45000});
@@ -186,6 +198,33 @@ class BrowserChecks {
       const bounds = heading.getBoundingClientRect();
       return document.activeElement === heading && bounds.top >= 0 && bounds.bottom <= innerHeight;
     });
+  }
+  async mathMlStructure(frame, check, record, source) {
+    await frame.locator('math').first().waitFor();
+    const geometry = await frame.locator('body').evaluate(body => {
+      const rect = element => { const {top, bottom, left, right, width, height} = element.getBoundingClientRect(); return {top, bottom, left, right, width, height}; };
+      return {
+        maths: [...body.querySelectorAll('math')].map(element => ({namespace: element.namespaceURI, id: element.id, text: element.textContent, display: element.getAttribute('display') || 'inline', computedDisplay: getComputedStyle(element).display, ...rect(element)})),
+        fractions: [...body.querySelectorAll('mfrac')].map(element => [...element.children].map(rect)),
+        powers: [...body.querySelectorAll('msup')].map(element => [...element.children].map(rect)),
+        rows: [...body.querySelectorAll('mtable mtr')].map(element => [...element.children].map(rect)),
+      };
+    });
+    record.mathMlStructure ??= [];
+    record.mathMlStructure.push({source, geometry});
+    assert.deepEqual(geometry.maths.map(math => math.id), ['ID.016', 'ID.030', 'ID.055']);
+    assert.deepEqual(geometry.maths.map(math => math.text), ['𝑥2+12', '𝐸=𝑚𝑐2+12', '(1234)']);
+    assert.deepEqual(geometry.maths.map(math => math.display), ['inline', 'block', 'block']);
+    check('LaTeX MathML retains original structure IDs, Unicode tokens and inline/display modes');
+    check('LaTeX MathML structure preserves three native math elements', geometry.maths.length === 3
+      && geometry.maths.every(math => math.namespace === 'http://www.w3.org/1998/Math/MathML' && math.width > 0));
+    check('Inline and display MathML structure render superscripts and stacked fractions', geometry.fractions.length === 2
+      && geometry.fractions.every(([a, b]) => a.bottom <= b.top + 2) && geometry.powers.length === 2
+      && geometry.powers.every(([base, power]) => power.bottom < base.bottom - 1 && power.height < base.height && power.right > base.right));
+    check('LaTeX MathML matrix retains two rows and two columns', geometry.rows.length === 2
+      && geometry.rows.every(row => row.length === 2 && row[0].right <= row[1].left + 2)
+      && geometry.rows[0].every((cell, column) => cell.bottom <= geometry.rows[1][column].top + 0.5
+        && Math.abs((cell.left + cell.right) / 2 - (geometry.rows[1][column].left + geometry.rows[1][column].right) / 2) < 1));
   }
   async sourcePresentation(page, assetBase, check, record) {
     const original = await page.locator('.demo-code').textContent();

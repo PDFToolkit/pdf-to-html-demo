@@ -10,7 +10,7 @@ use PDF\Html\DerivationResult;
 /** Filesystem operations belong to this reproducible build application. */
 final readonly class GalleryBuilder
 {
-    public const HTML_REVISION = 'c82bf04fd7a920e16abfd2eca19918176375a734';
+    public const HTML_REVISION = 'af80339e9199f80f07c22a27b24aece6acb07fa9';
     private const SIGNATURE_SHA = '8b55dfe5e157d024d88703c4cd761f0bb77dfd94178536d5f6f06ea09f1bd10e';
     private const CERTIFICATE_SHA = '61ecaec8b4fc69746718148aedaec21ee853c583a8e5e05967dd494dc54ed1d6';
 
@@ -19,10 +19,10 @@ final readonly class GalleryBuilder
     }
 
     /** @return array<string,mixed> */
-    public function build(string $output, ?string $revision, string $version = '0.2.1', ?string $htmlSource = null, bool $draft = false): array
+    public function build(string $output, ?string $revision, string $version = '0.3.0', ?string $htmlSource = null, bool $draft = false): array
     {
-        if (InstalledVersions::getReference('pdftoolkit/pdf-to-html') !== self::HTML_REVISION || ltrim(InstalledVersions::getPrettyVersion('pdftoolkit/pdf-to-html') ?? '', 'v') !== '0.7.0') {
-            throw new \RuntimeException('Build the gallery with the exact released HTML 0.7.0 dependency.');
+        if (InstalledVersions::getReference('pdftoolkit/pdf-to-html') !== self::HTML_REVISION || ltrim(InstalledVersions::getPrettyVersion('pdftoolkit/pdf-to-html') ?? '', 'v') !== '0.8.0') {
+            throw new \RuntimeException('Build the gallery with the exact released HTML 0.8.0 dependency.');
         }
         if (preg_match('/^\d+\.\d+\.\d+$/D', $version) !== 1) {
             throw new \InvalidArgumentException('The gallery version must be an explicit stable version.');
@@ -37,9 +37,10 @@ final readonly class GalleryBuilder
             throw new \InvalidArgumentException('A draft deliberately has no claimed generator commit.');
         }
         [$signature, $certificate] = $this->signature($htmlSource);
-        $cases = (new CaseFactory())->all($signature, $certificate, (new ImageFixtures($this->root . '/resources/images'))->read());
-        if (!$draft && count($cases) !== 10) {
-            throw new \RuntimeException('A release gallery requires the published signature fixture via --html-source.');
+        $latex = $htmlSource === null ? null : (new LatexMathMlFixtures($htmlSource . '/tests/Fixtures/mathml-latex'))->read();
+        $cases = (new CaseFactory())->all($signature, $certificate, (new ImageFixtures($this->root . '/resources/images'))->read(), $latex);
+        if (!$draft && count($cases) !== 11) {
+            throw new \RuntimeException('A release gallery requires the published signature and LaTeX fixtures via --html-source.');
         }
         $generator = ['package' => 'pdftoolkit/pdf-to-html-demo', 'version' => $version, 'commit' => $revision];
         $output = $this->outputPath($output);
@@ -57,13 +58,18 @@ final readonly class GalleryBuilder
                 $pdf = $this->write($stage, $case->id . '/source.pdf', $case->pdf, 'application/pdf', $inventory);
                 $html = $this->write($stage, $case->id . '/result.html.txt', $result->html, 'text/plain', $inventory);
                 $png = $this->write($stage, $case->id . '/page-1.png', $preview['bytes'], 'image/png', $inventory);
-                $code = $this->write($stage, $case->id . '/example.php.txt', $this->read($this->root . ($case->image === null ? '/src/Gallery/CaseFactory.php' : '/src/Gallery/ImageCaseFactory.php')), 'text/plain', $inventory);
+                $code = $case->latex === null
+                    ? $this->write($stage, $case->id . '/example.php.txt', $this->read($this->root . ($case->image === null ? '/src/Gallery/CaseFactory.php' : '/src/Gallery/ImageCaseFactory.php')), 'text/plain', $inventory)
+                    : $this->write($stage, $case->id . '/example.tex.txt', $case->latex->source, 'text/plain', $inventory);
                 $assets = [];
                 foreach ($result->assets as $asset) {
                     $assets[] = $this->write($stage, $case->id . '/' . $asset->filename, $asset->bytes, $asset->mediaType, $inventory);
                 }
                 $diagnostics = $this->write($stage, $case->id . '/diagnostics.json', $this->json(['profile' => $case->profile, 'sourceSha256' => $pdf['sha256'], 'htmlSha256' => $html['sha256'], 'diagnostics' => $result->diagnostics]), 'application/json', $inventory);
                 $files = ['pdf' => $pdf, 'html' => $html, 'preview' => $png, 'code' => $code, 'diagnostics' => $diagnostics, 'assets' => $assets];
+                if ($case->latex !== null) {
+                    $files['latexProvenance'] = $this->write($stage, $case->id . '/latex-provenance.json', $case->latex->provenance, 'application/json', $inventory);
+                }
                 if ($case->certificate !== null) {
                     $files['certificate'] = $this->write($stage, $case->id . '/signer.der', $case->certificate, 'application/pkix-cert', $inventory);
                 }
@@ -74,7 +80,7 @@ final readonly class GalleryBuilder
                 }
                 $source = $case->fixturePath === null
                     ? ['kind' => 'generated', ...$generator, 'path' => $case->image === null ? 'src/Gallery/CaseFactory.php' : 'src/Gallery/ImageCaseFactory.php']
-                    : ['kind' => 'published-fixture', 'package' => 'pdftoolkit/pdf-to-html', 'version' => '0.7.0', 'commit' => self::HTML_REVISION, 'path' => $case->fixturePath];
+                    : ['kind' => 'published-fixture', 'package' => 'pdftoolkit/pdf-to-html', 'version' => '0.8.0', 'commit' => self::HTML_REVISION, 'path' => $case->fixturePath];
                 $items[] = ['id' => $case->id, 'title' => $case->title, 'description' => $case->description, 'observations' => $case->observations, 'profile' => $case->profile, 'capabilities' => $case->capabilities, 'source' => $source, 'files' => $files, 'pages' => [[...$png, 'width' => $preview['width'], 'height' => $preview['height']]], 'expected' => $case->expected];
             }
             // The per-case source excerpt is the actual factory. Include its full object/build context once.
@@ -91,7 +97,7 @@ final readonly class GalleryBuilder
                 $this->write($stage, 'source/' . $relative . '.txt', $this->read($path), 'text/plain', $inventory);
             }
             usort($inventory, static fn (array $a, array $b): int => $a['path'] <=> $b['path']);
-            $manifest = ['schemaVersion' => 1, 'draft' => $draft, 'generator' => $generator, 'htmlPackage' => ['version' => '0.7.0', 'revision' => self::HTML_REVISION], 'rendering' => ['engine' => 'Poppler pdftoppm', 'version' => $this->rasterizer->version(), 'maximumDimension' => 1600], 'cases' => $items, 'assets' => $inventory];
+            $manifest = ['schemaVersion' => 1, 'draft' => $draft, 'generator' => $generator, 'htmlPackage' => ['version' => '0.8.0', 'revision' => self::HTML_REVISION], 'rendering' => ['engine' => 'Poppler pdftoppm', 'version' => $this->rasterizer->version(), 'maximumDimension' => 1600], 'cases' => $items, 'assets' => $inventory];
             if (file_put_contents($stage . '/gallery-manifest.json', $this->json($manifest)) === false) {
                 throw new \RuntimeException('Cannot write the gallery manifest.');
             }
@@ -112,12 +118,12 @@ final readonly class GalleryBuilder
         }
         $root = realpath($source);
         if ($root === false) {
-            throw new \InvalidArgumentException('--html-source must identify the checked-out HTML 0.7.0 source.');
+            throw new \InvalidArgumentException('--html-source must identify the checked-out HTML 0.8.0 source.');
         }
         $pdf = $this->read($root . '/tests/Fixtures/signatures/signed-padded.pdf');
         $certificate = $this->read($root . '/tests/Fixtures/signatures/signer.der');
         if (!hash_equals(self::SIGNATURE_SHA, hash('sha256', $pdf)) || !hash_equals(self::CERTIFICATE_SHA, hash('sha256', $certificate))) {
-            throw new \RuntimeException('The signature PDF and public certificate must match the published 0.7.0 fixture.');
+            throw new \RuntimeException('The signature PDF and public certificate must match the published 0.8.0 fixture.');
         }
         return [$pdf, $certificate];
     }

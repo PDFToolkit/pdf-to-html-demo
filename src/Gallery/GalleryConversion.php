@@ -30,9 +30,9 @@ final readonly class GalleryConversion
     public function convert(GalleryCase $case): DerivationResult
     {
         $policy = match ($case->profile) {
-            'basic', 'signature' => new DerivationPolicy(),
-            'reset' => new DerivationPolicy(formActions: new FormActionPolicy(allowReset: true)),
-            'rendering' => new DerivationPolicy(preferVisualFigures: true),
+            'basic', 'signature' => new DerivationPolicy(allowEmbeddedStylesheets: true, mergeCatalogHtmlSupplements: true),
+            'reset' => new DerivationPolicy(allowEmbeddedStylesheets: true, mergeCatalogHtmlSupplements: true, formActions: new FormActionPolicy(allowReset: true)),
+            'rendering' => new DerivationPolicy(allowEmbeddedStylesheets: true, mergeCatalogHtmlSupplements: true, preferVisualFigures: true),
             default => throw new \InvalidArgumentException('Unknown gallery conversion profile.'),
         };
         $signature = $case->profile === 'signature'

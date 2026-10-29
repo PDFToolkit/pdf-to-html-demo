@@ -22,10 +22,10 @@ from pypdf import PdfReader
 
 
 class DemoValidation:
-    HTML_REVISION = 'c82bf04fd7a920e16abfd2eca19918176375a734'
+    HTML_REVISION = 'af80339e9199f80f07c22a27b24aece6acb07fa9'
     SIGNATURE_HASH = '8b55dfe5e157d024d88703c4cd761f0bb77dfd94178536d5f6f06ea09f1bd10e'
     CERTIFICATE_HASH = '61ecaec8b4fc69746718148aedaec21ee853c583a8e5e05967dd494dc54ed1d6'
-    CASES = {'structure', 'table-listes', 'mathml', 'formulaire-reset', 'apparences', 'graphique', 'signature', 'jpeg', 'jpeg2000', 'jbig2'}
+    CASES = {'structure', 'table-listes', 'mathml', 'mathml-se', 'formulaire-reset', 'apparences', 'graphique', 'signature', 'jpeg', 'jpeg2000', 'jbig2'}
 
     def __init__(self, args):
         self.args = args
@@ -181,12 +181,29 @@ class DemoValidation:
         elif case_id == 'mathml':
             formula = next(node for node in elements if node['/S'] == '/Formula')
             associated = formula['/AF'][0].get_object()
-            self.check(associated['/AFRelationship'] == '/Alternative', 'MathML is a genuine PDF associated alternative')
+            self.check(associated['/AFRelationship'] == '/Supplement', 'MathML is a genuine PDF associated supplement')
             math = associated['/EF']['/F'].get_object().get_data()
             self.check(ET.fromstring(math).tag == '{http://www.w3.org/1998/Math/MathML}math', 'source associated bytes contain MathML')
             mathematics = self.elements(doc, 'math')
             self.check(len(mathematics) == 1 and mathematics[0].tag == '{http://www.w3.org/1998/Math/MathML}math' and mathematics[0].attrib.get('display') == 'block', 'native block MathML namespace')
             self.check(len(self.elements(doc, 'mfrac')) == len(self.elements(doc, 'msup')) == 1, 'native fraction and exponent')
+        elif case_id == 'mathml-se':
+            namespace = 'http://www.w3.org/1998/Math/MathML'
+            source_math = [node for node in elements if node['/S'] == '/math']
+            self.check(len(source_math) == 3 and all(node['/NS']['/NS'] == namespace for node in source_math), 'LaTeX supplies three real MathML namespace structure elements')
+            self.check(all(not node.get('/AF') for node in elements), 'MathML SE example has no element-associated MathML files')
+            self.check(reader.metadata.get('/Producer', '').startswith('luahbtex-') and reader.metadata.get('/Creator') == 'LaTeX', 'source PDF records its actual LaTeX producer')
+            math = self.elements(doc, 'math')
+            self.check([node.attrib.get('id') for node in math] == [str(node['/ID']) for node in source_math], 'derived MathML retains the original PDF structure IDs')
+            self.check([node.attrib.get('display', 'inline') for node in math] == ['inline', 'block', 'block'], 'LaTeX inline and displayed mathematics remain distinct')
+            self.check([''.join(node.itertext()) for node in math] == ['𝑥2+12', '𝐸=𝑚𝑐2+12', '(1234)'], 'LaTeX mathematical Unicode and token order are preserved')
+            self.check(len(self.elements(doc, 'mfrac')) == len(self.elements(doc, 'msup')) == 2 and len(self.elements(doc, 'mtable')) == 1 and len(self.elements(doc, 'mtr')) == 2 and len(self.elements(doc, 'mtd')) == 4, 'LaTeX fractions, exponents and two-by-two matrix retain their structure')
+            provenance_bytes = self.path(gallery, case['files']['latexProvenance']['path']).read_bytes()
+            provenance = json.loads(provenance_bytes)
+            fixture = provenance['fixtures']['mathml-se']
+            self.check(self.digest(provenance_bytes) == '8aad02c607e912e53b7b65da0622d022a7ed50641cd8934b4a715b8d7fd00ef3', 'retained LaTeX compiler and package provenance is unchanged')
+            self.check(fixture['pdf']['sha256'] == case['files']['pdf']['sha256'] and fixture['source']['sha256'] == case['files']['code']['sha256'], 'downloaded PDF and TeX match the actual LaTeX generation')
+            self.check(fixture['mode'] == 'mathml-SE' and fixture['independentCleanBuildsIdentical'] is True and provenance['passes'] == 2, 'MathML SE fixture records two identical independent clean builds')
         elif case_id == 'formulaire-reset':
             fields, widgets = self.widgets(reader)
             self.check(set(fields) == {'Name', 'Language', 'ResetName'}, 'three canonical form fields')
@@ -266,7 +283,7 @@ class DemoValidation:
         gallery = gallery_path.parent
         manifest = json.loads(gallery_path.read_text())
         self.check(manifest['schemaVersion'] == 1 and manifest['generator']['package'] == 'pdftoolkit/pdf-to-html-demo', 'gallery schema and package')
-        self.check(manifest['htmlPackage'] == application['htmlPackage'] == {'version': '0.7.0', 'revision': self.HTML_REVISION}, 'exact released HTML package identity')
+        self.check(manifest['htmlPackage'] == application['htmlPackage'] == {'version': '0.8.0', 'revision': self.HTML_REVISION}, 'exact released HTML package identity')
         self.check(manifest['generator']['version'] == application['application']['version'] and manifest['generator']['commit'] == application['application']['revision'], 'application and gallery provenance agree')
         draft = manifest.get('draft', False)
         self.check(draft == application['application']['draft'], 'consistent draft status')
@@ -278,7 +295,7 @@ class DemoValidation:
         self.check(640 <= browser_preview.get('viewportWidth', 0) <= 900 and browser_preview.get('deviceScaleFactor') == 1, 'HTML preview viewport is declared and bounded')
         self.report['browserPreview'] = browser_preview
         assets = self.inventory(gallery, manifest['assets'], {'gallery-manifest.json'})
-        self.check({case['id'] for case in manifest['cases']} == self.CASES and len(manifest['cases']) == 10, 'ten stable gallery cases')
+        self.check({case['id'] for case in manifest['cases']} == self.CASES and len(manifest['cases']) == 11, 'eleven stable gallery cases')
         self.report['tools']['poppler'] = self.command([self.args.pdftoppm, '-v']).stderr.decode().splitlines()[0]
         for case in manifest['cases']:
             for key in ('title', 'description', 'observations'):
@@ -286,12 +303,13 @@ class DemoValidation:
             files = [value for key, value in case['files'].items() if key != 'assets'] + case['files']['assets'] + case['pages']
             for item in files:
                 self.check(all(item[key] == assets[item['path']][key] for key in ('path', 'bytes', 'sha256', 'mediaType')), case['id'] + ': artifact reference matches inventory', item['path'])
-            self.check(case['files']['html']['path'].endswith('.html.txt') and case['files']['html']['mediaType'] == 'text/plain' and case['files']['code']['path'].endswith('.php.txt') and case['files']['code']['mediaType'] == 'text/plain', case['id'] + ': HTML and code are inert text downloads')
+            self.check(case['files']['html']['path'].endswith('.html.txt') and case['files']['html']['mediaType'] == 'text/plain' and case['files']['code']['path'].endswith('.tex.txt' if case['id'] == 'mathml-se' else '.php.txt') and case['files']['code']['mediaType'] == 'text/plain', case['id'] + ': HTML and code are inert text downloads')
             provenance = case['source']
             if provenance['kind'] == 'generated':
                 self.check(all(provenance[key] == manifest['generator'][key] for key in ('package', 'version', 'commit')), case['id'] + ': generated source provenance')
             else:
-                self.check(case['id'] == 'signature' and provenance == {'kind': 'published-fixture', 'package': 'pdftoolkit/pdf-to-html', 'version': '0.7.0', 'commit': self.HTML_REVISION, 'path': 'tests/Fixtures/signatures/signed-padded.pdf'}, 'signature source provenance')
+                fixture_paths = {'signature': 'tests/Fixtures/signatures/signed-padded.pdf', 'mathml-se': 'tests/Fixtures/mathml-latex/mathml-se.pdf'}
+                self.check(case['id'] in fixture_paths and provenance == {'kind': 'published-fixture', 'package': 'pdftoolkit/pdf-to-html', 'version': '0.8.0', 'commit': self.HTML_REVISION, 'path': fixture_paths.get(case['id'])}, case['id'] + ': published source provenance')
             preview = case['files'].get('htmlPreview')
             self.check(isinstance(preview, dict) and preview.get('path') == case['id'] + '/html-preview.png' and preview.get('mediaType') == 'image/png', case['id'] + ': actual HTML browser preview is present')
             with Image.open(self.path(gallery, preview['path'])) as screenshot:

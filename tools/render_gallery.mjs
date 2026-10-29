@@ -38,8 +38,8 @@ class GalleryBrowserPreview {
     assert.equal(manifest.schemaVersion, 1);
     assert.deepEqual(manifest.cases.map(sample => sample.id).sort(), [
       'apparences', 'formulaire-reset', 'graphique', 'jbig2', 'jpeg',
-      'jpeg2000', 'mathml', 'signature', 'structure', 'table-listes',
-    ], 'The ten release examples must each have one actual browser capture.');
+      'jpeg2000', 'mathml', 'mathml-se', 'signature', 'structure', 'table-listes',
+    ], 'The eleven release examples must each have one actual browser capture.');
     await fs.access(path.join(this.root, 'index.html'));
     const server = createServer((request, response) => this.serve(request, response));
     server.listen(0, '127.0.0.1');

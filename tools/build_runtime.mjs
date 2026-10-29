@@ -15,7 +15,7 @@ await fs.mkdir(assets, { recursive: true });
 const lock = JSON.parse(await fs.readFile(path.join(root, 'composer.lock'), 'utf8'));
 const expectedReferences = {
     'pdftoolkit/pdf-codecs': '1f82ae19d6dd874c574a5601d37f3ac63e0d4170',
-    'pdftoolkit/pdf-to-html': 'c82bf04fd7a920e16abfd2eca19918176375a734',
+    'pdftoolkit/pdf-to-html': 'af80339e9199f80f07c22a27b24aece6acb07fa9',
     'pdftoolkit/pdf-reader': '8f0a1a447da7812f515ac9c307f8431531d29655',
     'roukmoute/pdf': 'ea9ae2c134bbaf5fc3a22dbc7c81ff8e7b29a6cc',
 };

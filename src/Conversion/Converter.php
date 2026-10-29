@@ -22,7 +22,7 @@ final readonly class Converter
 {
     public function convert(ConversionInput $input): ConversionOutput
     {
-        $policy = new DerivationPolicy();
+        $policy = new DerivationPolicy(allowEmbeddedStylesheets: true, mergeCatalogHtmlSupplements: true);
         $limits = new DerivationLimits(maximumNodes: 20000, maximumDepth: 64, maximumOutputBytes: 8 * 1024 * 1024, maximumAssetBytes: 8 * 1024 * 1024);
         $sourceLimits = new ReadingLimits(
             maximumDepth: 64,

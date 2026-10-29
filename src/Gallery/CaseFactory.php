@@ -23,9 +23,13 @@ final readonly class CaseFactory
     }
 
     /** @return list<GalleryCase> */
-    public function all(?string $signaturePdf = null, ?string $certificateDer = null, array $images = []): array
+    public function all(?string $signaturePdf = null, ?string $certificateDer = null, array $images = [], ?LatexMathMlFixture $latex = null): array
     {
-        $cases = [$this->structure(), $this->table(), $this->math(), $this->form(), $this->appearances(), $this->graphics()];
+        $cases = [$this->structure(), $this->table(), $this->math()];
+        if ($latex !== null) {
+            $cases[] = $this->latexMath($latex);
+        }
+        array_push($cases, $this->form(), $this->appearances(), $this->graphics());
         if ($signaturePdf !== null && $certificateDer !== null) {
             $cases[] = new GalleryCase(
                 'signature',
@@ -84,10 +88,24 @@ final readonly class CaseFactory
     {
         $s = $this->scene;
         $mathml = '<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></math>';
-        $file = $s->dictionary(['Type' => new NameType('Filespec'), 'F' => new LiteralString('formula.mathml'), 'UF' => new LiteralString('formula.mathml'), 'AFRelationship' => new NameType('Alternative'), 'EF' => $s->dictionary(['F' => new IndirectReference(new StreamObject($mathml, $s->dictionary(['Type' => new NameType('EmbeddedFile'), 'Subtype' => new NameType('application/mathml+xml')])))])]);
+        $file = $s->dictionary(['Type' => new NameType('Filespec'), 'F' => new LiteralString('formula.mathml'), 'UF' => new LiteralString('formula.mathml'), 'AFRelationship' => new NameType('Supplement'), 'EF' => $s->dictionary(['F' => new IndirectReference(new StreamObject($mathml, $s->dictionary(['Type' => new NameType('EmbeddedFile'), 'Subtype' => new NameType('application/mathml+xml')])))])]);
         $paint = [...$s->text('E = m c', 206, 562, 28), ...$s->text('2', 301, 580, 17), ...$s->text('+', 326, 562, 28), ...$s->text('1', 360, 579, 18), ...$s->block(356, 568, 18, 1.2, [0.12, 0.18, 0.27]), ...$s->text('2', 360, 548, 18)];
         $formula = new PdfNode('Formula', paint: $paint, attributes: [$s->dictionary(['O' => new NameType('Layout'), 'Placement' => new NameType('Block'), 'Height' => new NumericType(60)]), $s->css(['font-size' => '30px', 'margin' => '28px 0'])], alt: 'E equals m c squared plus one half.', associatedFile: $file);
-        return new GalleryCase('mathml', $s->build('Mathematics, not flattened text', [$s->paragraph('Mathematics, not flattened text', 716, 'H1', 25), $s->paragraph('The PDF paints a formula and embeds its MathML alternative.', 670), $formula, $s->paragraph('The browser lays out the exponent and fraction natively.', 486)]), ['en' => 'Native mathematical layout', 'fr' => 'Une mise en page mathématique native'], ['en' => 'An embedded MathML alternative becomes real MathML after reading the PDF.', 'fr' => 'Une alternative MathML incorporée devient du vrai MathML après lecture du PDF.'], ['en' => ['Inspect the exponent and fraction.', 'No image or handwritten output HTML replaces the formula.', 'This example uses browser-supported presentation MathML.'], 'fr' => ['Observer l’exposant et la fraction.', 'Aucune image ni sortie HTML fabriquée ne remplace la formule.', 'Ce cas utilise du MathML de présentation pris en charge par les navigateurs.']], expected: ['tags' => ['math', 'msup', 'mfrac'], 'scripts' => false]);
+        return new GalleryCase('mathml', $s->build('Mathematics, not flattened text', [$s->paragraph('Mathematics, not flattened text', 716, 'H1', 25), $s->paragraph('The PDF paints a formula and includes its associated MathML.', 670), $formula, $s->paragraph('The browser lays out the exponent and fraction natively.', 486)]), ['en' => 'Native mathematical layout', 'fr' => 'Une mise en page mathématique native'], ['en' => 'The MathML associated with the PDF formula is included in the HTML and rendered by the browser.', 'fr' => 'Le MathML associé à la formule dans le PDF est repris dans le HTML et affiché par le navigateur.'], ['en' => ['Inspect the exponent and fraction.', 'No image or handwritten output HTML replaces the formula.', 'This example uses browser-supported presentation MathML.'], 'fr' => ['Observer l’exposant et la fraction.', 'Aucune image ni sortie HTML fabriquée ne remplace la formule.', 'Ce cas utilise du MathML de présentation pris en charge par les navigateurs.']], expected: ['tags' => ['math', 'msup', 'mfrac'], 'scripts' => false]);
+    }
+
+    private function latexMath(LatexMathMlFixture $fixture): GalleryCase
+    {
+        return new GalleryCase(
+            'mathml-se',
+            $fixture->pdf,
+            ['en' => 'MathML structure produced by LaTeX', 'fr' => 'Une structure MathML produite par LaTeX'],
+            ['en' => 'A real LuaLaTeX PDF stores the mathematical elements directly in its structure tree, without an associated MathML file.', 'fr' => 'Un vrai PDF LuaLaTeX contient les éléments mathématiques directement dans son arbre de structure, sans fichier MathML associé.'],
+            ['en' => ['Compare the inline formula, displayed equation and two-by-two matrix.', 'The LaTeX source and compiler provenance are available with the original PDF.', 'The browser renders MathML derived from the PDF tags. This is a focused example, not an accessibility certification.'], 'fr' => ['Comparer la formule dans le texte, l’équation centrée et la matrice deux par deux.', 'La source LaTeX et la provenance du compilateur accompagnent le PDF original.', 'Le navigateur affiche le MathML dérivé des balises PDF. Cet exemple ciblé ne constitue pas une certification d’accessibilité.']],
+            expected: ['tags' => ['math', 'msup', 'mfrac', 'mtable', 'mtr', 'mtd'], 'scripts' => false],
+            fixturePath: 'tests/Fixtures/mathml-latex/mathml-se.pdf',
+            latex: $fixture,
+        );
     }
 
     private function form(): GalleryCase

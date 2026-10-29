@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "717ba2b81b19fd2c033f297ed891322e",
+    "content-hash": "5998af07b5fa042972aa8edd79c58efe",
     "packages": [
         {
             "name": "pdftoolkit/pdf-codecs",
@@ -130,16 +130,16 @@
         },
         {
             "name": "pdftoolkit/pdf-to-html",
-            "version": "v0.7.0",
+            "version": "v0.8.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PDFToolkit/pdf-to-html.git",
-                "reference": "c82bf04fd7a920e16abfd2eca19918176375a734"
+                "reference": "af80339e9199f80f07c22a27b24aece6acb07fa9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PDFToolkit/pdf-to-html/zipball/c82bf04fd7a920e16abfd2eca19918176375a734",
-                "reference": "c82bf04fd7a920e16abfd2eca19918176375a734",
+                "url": "https://api.github.com/repos/PDFToolkit/pdf-to-html/zipball/af80339e9199f80f07c22a27b24aece6acb07fa9",
+                "reference": "af80339e9199f80f07c22a27b24aece6acb07fa9",
                 "shasum": ""
             },
             "require": {
@@ -162,7 +162,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.7.x-dev"
+                    "dev-main": "0.8.x-dev"
                 }
             },
             "autoload": {
@@ -195,7 +195,7 @@
                 "issues": "https://github.com/PDFToolkit/pdf-to-html/issues",
                 "source": "https://github.com/PDFToolkit/pdf-to-html"
             },
-            "time": "2026-10-28T20:45:55+00:00"
+            "time": "2026-10-29T11:42:24+00:00"
         },
         {
             "name": "roukmoute/pdf",
