@@ -26,6 +26,7 @@ class BrowserChecks {
   async browser(name, type) {
     const browser = await type.launch({headless: true});
     const record = this.report.browsers[name] = {version: browser.version(), checks: [], screenshots: []};
+    record.structureInspection = {gallery: [], nativeWasm: null, untagged: null, hostile: null, lifecycle: [], keyboardMobile: null};
     const context = await browser.newContext({viewport: {width: 1440, height: 1100}, acceptDownloads: true});
     const page = await context.newPage();
     const requests = [], errors = [];
@@ -101,8 +102,25 @@ class BrowserChecks {
         await page.getByRole('button', {name: 'Readable view', exact: true}).click();
         assert.equal(await page.locator('.demo-code').textContent(), expected);
         check(sample.id + ': readable source preserves every character of the converter output', await page.locator('.demo-source-token').count() > 3);
+        await page.getByRole('tab', {name: 'PDF structure', exact: true}).click();
+        const inspection = await (await context.request.get(new URL(sample.files.inspection.path, galleryBase).href)).json();
+        assert.equal(inspection.source.sha256, sample.files.pdf.sha256);
+        check(sample.id + ': the independent original structure is available without loading WebAssembly',
+          await page.locator('.demo-structure').count() === 1 && inspection.inspection.nodes.length > 0
+          && (await page.locator('.demo-structure-source').textContent()).includes(inspection.source.sha256));
+        record.structureInspection.gallery.push({id: sample.id, sourceSha256: inspection.source.sha256,
+          snapshotSha256: crypto.createHash('sha256').update(JSON.stringify(inspection)).digest('hex'), nodes: inspection.inspection.nodes.length, passed: true});
+        if (sample.id === 'mathml') {
+          const inspectionDownload = await this.inspectionDownload(page);
+          assert.deepEqual(inspectionDownload, inspection);
+          check('Gallery inspection export retains the exact native Reader snapshot and PDF identity');
+          await screenshot('structure-gallery');
+        }
       }
+      check('Exploring every gallery structure still fetches no PHP runtime', !requests.some(item => /\.wasm(?:\.gz)?$|application\.zip/.test(item.url)));
+      await page.getByRole('tab', {name: 'HTML code', exact: true}).click();
       await this.sourcePresentation(page, assetBase, check, record);
+      await this.structurePresentation(page, assetBase, check, record);
       const sampleLink = page.locator('.demo-sample-download').first();
       const sourceDownloadEvent = page.waitForEvent('download'); await sampleLink.click();
       const sourceDownload = await sourceDownloadEvent;
@@ -119,6 +137,15 @@ class BrowserChecks {
       assert.equal(await page.locator('.demo-code').textContent(), expected);
       check('A user-selected PDF is actually converted in WebAssembly to the exact native HTML');
       check('Conversion sends no PDF bytes and uses only local GET assets', requests.slice(beforeUpload).every(request => !request.body && request.method === 'GET' && new URL(request.url).origin === this.base.origin));
+      await page.getByRole('tab', {name: 'PDF structure', exact: true}).click();
+      const nativeInspection = await (await context.request.get(new URL(basic.files.inspection.path, galleryBase).href)).json();
+      const wasmInspection = await this.inspectionDownload(page);
+      assert.deepEqual(wasmInspection, nativeInspection);
+      check('WebAssembly inspection equals the independent native gallery snapshot, including references and associated files');
+      record.structureInspection.nativeWasm = {id: basic.id, sourceSha256: nativeInspection.source.sha256,
+        nativeSha256: crypto.createHash('sha256').update(JSON.stringify(nativeInspection)).digest('hex'),
+        wasmSha256: crypto.createHash('sha256').update(JSON.stringify(wasmInspection)).digest('hex'), passed: true};
+      await screenshot('structure-wasm');
       await page.getByRole('tab', {name: 'Source PDF', exact: true}).click();
       check('Imported source remains available with an explicit reader action', await page.locator('.demo-source-file').count() === 1
         && (await page.locator('.demo-source-file').textContent()).includes('mathml.pdf') && await page.locator('.demo-source-file iframe').count() === 0);
@@ -138,6 +165,51 @@ class BrowserChecks {
       check('The LaTeX PDF with MathML structure converts in WebAssembly to the exact native HTML');
       await screenshot('wasm-mathml-se');
       await this.imageImports(page, context, manifest, galleryBase, requests, check, screenshot, record);
+      const untagged = this.untaggedPdf();
+      await page.locator('input[type=file]').setInputFiles({name: 'readable-untagged.pdf', mimeType: 'application/pdf', buffer: untagged});
+      await page.waitForFunction(() => document.querySelector('.demo-status')?.dataset.error === 'true', null, {timeout: 45000});
+      check('A readable untagged PDF keeps its inspection when HTML derivation refuses it',
+        (await page.locator('.demo-status').textContent()).includes('The PDF was inspected')
+        && await page.locator('.demo-structure').count() === 1
+        && await page.getByRole('button', {name: 'Download HTML + assets', exact: true}).isDisabled());
+      const untaggedInspection = await this.inspectionDownload(page);
+      assert.equal(untaggedInspection.inspection.document.tagged, false);
+      assert.equal(untaggedInspection.inspection.pages.length, 1);
+      assert.equal(untaggedInspection.inspection.nodes.length, 0);
+      assert.equal(untaggedInspection.source.sha256, crypto.createHash('sha256').update(untagged).digest('hex'));
+      const originalDownloadEvent = page.waitForEvent('download'); await page.getByRole('button', {name: 'Download PDF', exact: true}).first().click();
+      assert.deepEqual(await fs.readFile(await (await originalDownloadEvent).path()), untagged);
+      check('A rejected HTML conversion preserves the byte-exact original PDF, page references and explicit empty structure');
+      record.structureInspection.untagged = {sourceSha256: untaggedInspection.source.sha256, htmlRejected: true,
+        originalUnchanged: true, nodes: untaggedInspection.inspection.nodes.length, pages: untaggedInspection.inspection.pages.length, passed: true};
+      await page.getByRole('tab', {name: 'HTML result', exact: true}).click();
+      check('A refused HTML conversion shows its reason without inventing an HTML preview', await page.locator('.demo-workspace iframe').count() === 0
+        && (await page.locator('.demo-panels').textContent()).includes('HTML conversion could not finish'));
+      await page.getByRole('tab', {name: 'PDF structure', exact: true}).click(); await screenshot('structure-untagged');
+      const hostileFixture = path.resolve(__dirname, '../vendor/pdftoolkit/pdf-reader/tests/Fixtures/inspection/classic.pdf');
+      const hostilePdf = await fs.readFile(hostileFixture);
+      const fixtureInventory = JSON.parse(await fs.readFile(path.join(path.dirname(hostileFixture), 'manifest.json'), 'utf8'));
+      assert.equal(crypto.createHash('sha256').update(hostilePdf).digest('hex'), fixtureInventory.fixtures['classic.pdf'].sha256);
+      const hostileRequestStart = requests.length;
+      await page.locator('input[type=file]').setInputFiles({name: 'private-hostile-inspection.pdf', mimeType: 'application/pdf', buffer: hostilePdf});
+      await page.waitForFunction(() => document.querySelector('[data-demo-root]')?.getAttribute('aria-busy') === 'false', null, {timeout: 45000});
+      await page.getByRole('tab', {name: 'PDF structure', exact: true}).click();
+      const hostileSnapshot = await this.inspectionDownload(page);
+      assert.equal(hostileSnapshot.inspection.associatedFiles.length, 4);
+      assert.ok(hostileSnapshot.inspection.associatedFiles.some(file => file.filename === '<script>alert(1)</script>.txt'));
+      assert.ok(hostileSnapshot.inspection.nodes.some(node => node.reference?.generation === 7));
+      assert.ok(JSON.stringify(hostileSnapshot).includes('9007199254740993'));
+      check('The real hostile PDF preserves attachment names, generation numbers and integers beyond JavaScript precision', true);
+      await page.locator('.demo-structure-collection > summary').filter({hasText: /^Associated files/}).click();
+      await page.locator('.demo-structure-record > summary').filter({hasText: '<script>alert(1)</script>.txt'}).waitFor();
+      check('Real PDF actions, external streams and hostile attachment names stay inert during inspection',
+        (await page.locator('.demo-structure').textContent()).includes('<script>alert(1)</script>.txt')
+        && await page.locator('.demo-structure script,.demo-structure iframe,.demo-structure img,.demo-structure a').count() === 0
+        && requests.slice(hostileRequestStart).every(request => request.method === 'GET' && !request.body
+          && new URL(request.url).origin === this.base.origin && !request.url.includes('inspection-must-not') && !request.url.includes('private-hostile')));
+      record.structureInspection.hostile = {sourceSha256: hostileSnapshot.source.sha256, associatedFiles: hostileSnapshot.inspection.associatedFiles.length,
+        generationPreserved: true, largeIntegerPreserved: true, inert: true, localGetRequestsOnly: true, passed: true};
+      await screenshot('structure-hostile-pdf');
       await page.locator('input[type=file]').setInputFiles({name: 'private-name-never-sent.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\ninvalid')});
       await page.waitForFunction(() => document.querySelector('.demo-status')?.dataset.error === 'true', null, {timeout: 45000});
       check('Malformed input produces an explicit error, with no stale success preview', await page.locator('.demo-workspace iframe').count() === 0);
@@ -152,6 +224,7 @@ class BrowserChecks {
       await page.getByRole('button', {name: 'Clear my file', exact: true}).click();
       check('Clear removes the file and result from the interface', await page.locator('input[type=file]').evaluate(element => element.files.length === 0));
       await this.raceChecks(context, en, assetBase, pdf, check);
+      await this.inspectionLifecycleChecks(context, en, pdf, nativeInspection, expected, check, record);
       await this.startupChecks(context, en, fr, pdf, check, record, name);
       const isolation = await page.evaluate(async moduleUrl => {
         const {PreviewDocument} = await import(moduleUrl);
@@ -179,6 +252,15 @@ class BrowserChecks {
       await page.getByRole('tab', {name: 'Comparer', exact: true}).click();
       check('The mobile page fits the viewport without horizontal scrolling', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
       await screenshot('fr-mobile');
+      await page.getByRole('tab', {name: 'Structure PDF', exact: true}).click();
+      const disclosure = page.locator('.demo-structure-branch > summary').first();
+      await disclosure.focus(); await page.keyboard.press('Enter');
+      check('The French structure tree opens its native disclosure with the keyboard', await disclosure.evaluate(element => element.parentElement.open));
+      await page.locator('.demo-structure-select').first().click();
+      check('Selecting original properties transfers focus to their heading', await page.locator('.demo-structure-detail h4').evaluate(element => element === document.activeElement));
+      check('The original structure and raw properties fit a mobile viewport', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+      record.structureInspection.keyboardMobile = {width: 390, keyboardDisclosure: true, detailsFocus: true, noHorizontalOverflow: true, passed: true};
+      await screenshot('structure-fr-mobile');
       check('Application scripts produce no uncaught browser errors', errors.length === 0);
       record.requests = requests.length;
       record.passed = true;
@@ -275,6 +357,158 @@ class BrowserChecks {
     check('Source inspection never executes embedded markup and bounds visual formatting', evidence.noExecution && evidence.limits);
     check('Missing identifier capability, Worker construction, transfer and deserialization failures release resources exactly once', evidence.cleanup.every(Boolean));
     record.sourcePresentation = evidence;
+  }
+  async inspectionDownload(page) {
+    const event = page.waitForEvent('download');
+    await page.getByRole('button', {name: 'Download inspection JSON', exact: true}).click();
+    return JSON.parse(await fs.readFile(await (await event).path(), 'utf8'));
+  }
+  async inspectionLifecycleChecks(context, url, pdf, inspection, html, check, record) {
+    for (const scenario of ['cancel', 'timeout', 'inspection-error']) {
+      const page = await context.newPage();
+      try {
+        await page.addInitScript(({inspection, html, scenario}) => {
+          window.inspectionWorkers = [];
+          window.Worker = class {
+            constructor() { this.terminated = 0; window.inspectionWorkers.push(this); }
+            terminate() { this.terminated++; }
+            postMessage(message) {
+              this.message = message;
+              queueMicrotask(() => {
+                this.onmessage({data: scenario === 'inspection-error'
+                  ? {type: 'inspection-error', id: message.id, error: {code: 'resource_limit'}}
+                  : {type: 'inspection', id: message.id, inspection}});
+                if (scenario === 'inspection-error') this.onmessage({data: {type: 'result', id: message.id, result: {html, assets: [], diagnostics: []}}});
+              });
+            }
+            late() { this.onmessage({data: {type: 'inspection', id: this.message.id, inspection}}); }
+          };
+        }, {inspection, html, scenario});
+        if (scenario === 'timeout') await page.clock.install();
+        await page.goto(url.href);
+        await page.locator('.demo-sample').first().waitFor();
+        await page.locator('input[type=file]').setInputFiles({name: 'inspection-lifecycle.pdf', mimeType: 'application/pdf', buffer: pdf});
+        if (scenario === 'inspection-error') {
+          await page.waitForFunction(() => document.querySelector('.demo-status')?.textContent.includes('Conversion complete'));
+          await page.getByRole('tab', {name: 'HTML code', exact: true}).click();
+          assert.equal(await page.locator('.demo-code').textContent(), html);
+          await page.getByRole('tab', {name: 'PDF structure', exact: true}).click();
+          check('An inspection-specific failure does not discard successful HTML conversion', (await page.locator('.demo-panels').textContent()).includes('Structure inspection is unavailable'));
+        } else {
+          await page.locator('.demo-structure').waitFor();
+          if (scenario === 'cancel') await page.getByRole('button', {name: 'Cancel', exact: true}).click();
+          else await page.clock.fastForward(30001);
+          await page.waitForFunction(() => document.querySelector('[data-demo-root]')?.getAttribute('aria-busy') === 'false');
+          assert.deepEqual(await this.inspectionDownload(page), inspection);
+          check(scenario + ': the visible inspection and original PDF survive a stopped HTML conversion',
+            await page.getByRole('button', {name: 'Download HTML + assets', exact: true}).isDisabled()
+            && await page.locator('.demo-workspace h3').textContent() === 'inspection-lifecycle.pdf'
+            && await page.evaluate(() => window.inspectionWorkers[0].terminated === 1));
+        }
+        await page.getByRole('button', {name: 'Clear my file', exact: true}).click();
+        await page.evaluate(() => window.inspectionWorkers[0].late());
+        check(scenario + ': clearing the file prevents a late inspection from restoring private data', await page.locator('.demo-workspace h3').count() === 0
+          && await page.locator('.demo-structure').count() === 0 && await page.locator('input[type=file]').evaluate(element => element.files.length === 0));
+        record.structureInspection.lifecycle.push({scenario, retainedIndependentResult: true, cleared: true, staleIgnored: true, passed: true});
+      } finally { await page.close(); }
+    }
+  }
+  untaggedPdf() {
+    const objects = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>', '<< /Length 0 >>\nstream\n\nendstream'];
+    let bytes = '%PDF-1.7\n'; const offsets = [];
+    for (const [index, object] of objects.entries()) { offsets.push(Buffer.byteLength(bytes)); bytes += (index + 1) + ' 0 obj\n' + object + '\nendobj\n'; }
+    const xref = Buffer.byteLength(bytes); bytes += 'xref\n0 5\n0000000000 65535 f \n';
+    for (const offset of offsets) bytes += String(offset).padStart(10, '0') + ' 00000 n \n';
+    return Buffer.from(bytes + 'trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+  }
+  async structurePresentation(page, assetBase, check, record) {
+    const evidence = await page.evaluate(async moduleUrl => {
+      const {PdfInspection, PdfStructureView, BrowserConverter} = await import(moduleUrl);
+      const t = new Proxy({}, {get: (_, key) => String(key)});
+      const hostile = '<img src="https://example.invalid/leak" onerror="window.structureExecuted=true"><script>window.structureExecuted=true</script>';
+      const name = value => ({type: 'name', preview: '/' + value, hex: '41', byteLength: 1, truncated: false});
+      const wrapper = {
+        source: {sha256: 'a'.repeat(64), bytes: 10},
+        inspection: {schemaVersion: 1, document: {tagged: true, version: '1.7'}, pages: [], roots: ['root'],
+          nodes: [{id: 'root', parentId: null, kind: 'element', reference: {number: '9', generation: 0}, role: name(hostile), namespace: null,
+            page: {number: 1, reference: {number: '3', generation: 0}, inherited: false}, mcid: null, objectReference: null,
+            properties: {type: 'dictionary', entries: [{key: name('URI'), value: {type: 'string', preview: hostile, hex: '41', byteLength: 1, truncated: false}},
+              {key: name('A'), value: {type: 'reference', reference: {number: '12', generation: 0}, target: 'obj-12-0'}}], truncated: false}, children: ['child']},
+            {id: 'child', parentId: 'root', kind: 'mcid', reference: null, role: null, namespace: null, page: null, mcid: '7', objectReference: null, properties: {type: 'integer', value: '7'}, children: []}],
+          objects: [{id: 'obj-12-0', reference: {number: '12', generation: 0}, status: 'available', value: {type: 'name', preview: hostile, hex: '41', byteLength: 1, truncated: false}}],
+          roleMappings: [{owner: 'document', namespace: null, source: name(hostile), target: name('P')}],
+          associatedFiles: [{id: 'file-1', owner: 'root', reference: {number: '15', generation: 0}, filename: hostile, relationship: 'Supplement', properties: {type: 'dictionary', entries: [], truncated: false}, embeddedStreams: []}],
+          diagnostics: [{code: 'test-omission', message: hostile, nodeId: 'root', reference: null}], truncated: true},
+      };
+      let exported;
+      const view = new PdfStructureView(wrapper, t, value => { exported = JSON.parse(value); });
+      const container = view.render(); container.classList.add('demo-app'); document.body.append(container);
+      const literal = container.textContent.includes(hostile);
+      container.querySelector('.demo-structure .demo-actions button')?.click();
+      // The root itself carries .demo-structure, so its direct action is selected here.
+      container.querySelector('.demo-actions button').click();
+      for (const summary of container.querySelectorAll('.demo-structure-overview > details > summary')) summary.click();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      const objectButton = [...container.querySelectorAll('.demo-structure-detail button')].find(button => button.textContent.includes('12 0 R'));
+      objectButton.click();
+      const referenceResolved = container.querySelector('.demo-structure-detail h4').textContent.includes('12 0 R')
+        && container.querySelector('.demo-structure-detail pre').textContent.includes(hostile.replaceAll('"', '\\"'));
+      const inert = !container.querySelector('img,script,iframe,a,[href],[src],[onerror]') && !window.structureExecuted;
+      const partial = container.querySelector('.demo-structure-warning').textContent === 'structurePartial';
+      const exportedExactly = JSON.stringify(exported) === JSON.stringify(wrapper);
+      container.remove();
+      const many = structuredClone(wrapper); many.inspection.truncated = false; many.inspection.roots = []; many.inspection.nodes = [];
+      for (let index = 0; index < 2005; index++) {
+        const node = structuredClone(wrapper.inspection.nodes[1]); node.id = 'node-' + index; node.parentId = null;
+        many.inspection.nodes.push(node); many.inspection.roots.push(node.id);
+      }
+      const bounded = new PdfStructureView(many, t).render(); document.body.append(bounded);
+      const progressive = bounded.querySelectorAll('.demo-structure-node').length === 50;
+      for (let index = 0; index < 45; index++) bounded.querySelector('.demo-structure-tree-pane .demo-structure-more')?.click();
+      const boundedRows = bounded.querySelectorAll('.demo-structure-node').length === 2000
+        && !bounded.querySelector('.demo-structure-tree-pane > .demo-structure-warning').hidden;
+      bounded.remove();
+      const excessive = structuredClone(wrapper); excessive.inspection.document.large = 'x'.repeat(8 * 1024 * 1024 + 1);
+      let excessiveRejected = false; try { new PdfInspection(excessive); } catch { excessiveRejected = true; }
+      const unknown = structuredClone(wrapper); unknown.inspection.schemaVersion = 99;
+      let unknownRejected = false; try { new PdfInspection(unknown); } catch { unknownRejected = true; }
+      const nested = structuredClone(wrapper);
+      let value = {type: 'integer', value: '1'};
+      for (let depth = 0; depth < 48; depth++) value = {type: 'dictionary', entries: [{key: name('Nested'), value}], truncated: false};
+      nested.inspection.document.nested = value;
+      const supportedDepth = new PdfInspection(nested).snapshot.document.nested.type === 'dictionary';
+      for (let depth = 0; depth < 100; depth++) value = {type: 'dictionary', entries: [{key: name('Nested'), value}], truncated: false};
+      nested.inspection.document.nested = value;
+      let excessiveDepthRejected = false; try { new PdfInspection(nested); } catch { excessiveDepthRejected = true; }
+      const lifecycle = [];
+      for (const ending of ['error', 'cancel', 'timeout', 'result']) {
+        let terminated = 0, current = null, deliveries = 0, timeout;
+        const originalTimer = window.setTimeout;
+        const worker = {terminate() { terminated++; }, postMessage() {}};
+        const converter = new BrowserConverter(new URL('./', moduleUrl), () => {}, () => worker, () => 'inspection-job');
+        if (ending === 'timeout') window.setTimeout = callback => { timeout = callback; return 1; };
+        const result = converter.convert('private-inspection.pdf', new Uint8Array([1]), value => { current = value; deliveries++; });
+        window.setTimeout = originalTimer;
+        worker.onmessage({data: {type: 'inspection', id: 'previous-job', inspection: {invalid: true}}});
+        worker.onmessage({data: {type: 'inspection', id: 'inspection-job', inspection: wrapper}});
+        if (ending === 'cancel') converter.cancel();
+        else if (ending === 'timeout') timeout();
+        else worker.onmessage({data: {type: ending, id: 'inspection-job', error: {code: 'untagged_pdf'}, result: {html: 'ok'}}});
+        const outcome = await result.catch(error => error);
+        worker.onmessage({data: {type: 'inspection', id: 'inspection-job', inspection: {late: true}}});
+        lifecycle.push(deliveries === 1 && current === wrapper && terminated === 1 && converter.worker === null
+          && (ending === 'result' ? outcome.result.html === 'ok' : outcome.code === ({error: 'untagged_pdf', cancel: 'cancelled', timeout: 'timeout'})[ending]));
+      }
+      return {literal, inert, partial, referenceResolved, exportedExactly, progressive, boundedRows, excessiveRejected, unknownRejected, supportedDepth, excessiveDepthRejected, lifecycle};
+    }, new URL('app.js', assetBase).href);
+    check('PDF names, strings, role mappings and attachment names remain inert text', evidence.literal && evidence.inert);
+    check('Original object references navigate only to the captured object snapshot', evidence.referenceResolved);
+    check('Partial inspection is explicit and exported JSON preserves every captured value', evidence.partial && evidence.exportedExactly);
+    check('The structure interface renders progressively and bounds DOM rows and transport size', evidence.progressive && evidence.boundedRows && evidence.excessiveRejected && evidence.unknownRejected);
+    check('Typed dictionaries retain the Reader depth allowance while excessive transport nesting is rejected', evidence.supportedDepth && evidence.excessiveDepthRejected);
+    check('Inspection survives conversion errors, cancellation and timeout while stale Worker messages are ignored', evidence.lifecycle.every(Boolean));
+    record.structurePresentation = evidence;
   }
   async widgetAppearances(page, frame, check, record) {
     const iframe = page.locator('iframe[title="Derived HTML"]');

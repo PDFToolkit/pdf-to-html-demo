@@ -22,7 +22,8 @@ from pypdf import PdfReader
 
 
 class DemoValidation:
-    HTML_REVISION = 'b60a1816de2a340fdf9ddd01c4ac70d4f40f5d2f'
+    READER_REVISION = '007ed70a2e77d62df8d7f8775382af594070714e'
+    HTML_REVISION = '89c1328ece98a131866810d3f0e21c752fbf5c09'
     SIGNATURE_HASH = '8b55dfe5e157d024d88703c4cd761f0bb77dfd94178536d5f6f06ea09f1bd10e'
     CERTIFICATE_HASH = '61ecaec8b4fc69746718148aedaec21ee853c583a8e5e05967dd494dc54ed1d6'
     CASES = {'structure', 'table-listes', 'mathml', 'mathml-se', 'formulaire-reset', 'apparences', 'graphique', 'signature', 'jpeg', 'jpeg2000', 'jbig2'}
@@ -275,6 +276,29 @@ class DemoValidation:
             self.check(expected['maximumPixelError'] == tolerance and maximum <= tolerance,
                        case['id'] + ': independent decoded pixel comparison', {'maximumError': maximum, 'allowed': tolerance})
 
+    def inspection(self, case, reader, elements, gallery):
+        artifact = case['files']['inspection']
+        self.check(artifact['mediaType'] == 'application/json' and artifact['bytes'] <= 8 * 1024 * 1024,
+                   case['id'] + ': bounded inspection JSON artifact')
+        snapshot = json.loads(self.path(gallery, artifact['path']).read_text())
+        self.check(snapshot['source'] == {'sha256': case['files']['pdf']['sha256'], 'bytes': case['files']['pdf']['bytes']},
+                   case['id'] + ': inspection identifies exact original PDF bytes')
+        inspection = snapshot['inspection']
+        self.check(inspection['schemaVersion'] == 1 and inspection['document']['tagged'] and not inspection['truncated'],
+                   case['id'] + ': complete source inspection')
+        reference = lambda value: {'number': str(value.idnum), 'generation': value.generation}
+        self.check(inspection['document']['catalogReference'] == reference(reader.trailer.raw_get('/Root')),
+                   case['id'] + ': original catalog reference agrees with pypdf')
+        expected = [(reference(item.indirect_reference), str(item['/S'])) for item in elements]
+        actual = [(item['reference'], item['role']['preview']) for item in inspection['nodes'] if item['kind'] == 'element']
+        self.check(actual == expected, case['id'] + ': original ordered structure roles and identities agree with pypdf')
+        self.check([item['reference'] for item in inspection['pages']] == [reference(page.indirect_reference) for page in reader.pages],
+                   case['id'] + ': original page references agree with pypdf')
+        identifiers = {item['id'] for item in inspection['nodes']}
+        self.check(len(identifiers) == len(inspection['nodes']) and all(root in identifiers for root in inspection['roots'])
+                   and all(child in identifiers for node in inspection['nodes'] for child in node['children']),
+                   case['id'] + ': inspection tree has complete local identities')
+
     def run(self):
         application = json.loads((self.root / 'demo-manifest.json').read_text())
         self.check(application['schemaVersion'] == 1, 'application manifest schema')
@@ -283,7 +307,8 @@ class DemoValidation:
         gallery = gallery_path.parent
         manifest = json.loads(gallery_path.read_text())
         self.check(manifest['schemaVersion'] == 1 and manifest['generator']['package'] == 'pdftoolkit/pdf-to-html-demo', 'gallery schema and package')
-        self.check(manifest['htmlPackage'] == application['htmlPackage'] == {'version': '0.8.1', 'revision': self.HTML_REVISION}, 'exact released HTML package identity')
+        self.check(manifest['htmlPackage'] == application['htmlPackage'] == {'version': '0.8.2', 'revision': self.HTML_REVISION}, 'exact released HTML package identity')
+        self.check(manifest['readerPackage'] == application['readerPackage'] == {'version': '0.8.0', 'revision': self.READER_REVISION}, 'exact released Reader inspection identity')
         self.check(manifest['generator']['version'] == application['application']['version'] and manifest['generator']['commit'] == application['application']['revision'], 'application and gallery provenance agree')
         draft = manifest.get('draft', False)
         self.check(draft == application['application']['draft'], 'consistent draft status')
@@ -309,7 +334,7 @@ class DemoValidation:
                 self.check(all(provenance[key] == manifest['generator'][key] for key in ('package', 'version', 'commit')), case['id'] + ': generated source provenance')
             else:
                 fixture_paths = {'signature': 'tests/Fixtures/signatures/signed-padded.pdf', 'mathml-se': 'tests/Fixtures/mathml-latex/mathml-se.pdf'}
-                self.check(case['id'] in fixture_paths and provenance == {'kind': 'published-fixture', 'package': 'pdftoolkit/pdf-to-html', 'version': '0.8.1', 'commit': self.HTML_REVISION, 'path': fixture_paths.get(case['id'])}, case['id'] + ': published source provenance')
+                self.check(case['id'] in fixture_paths and provenance == {'kind': 'published-fixture', 'package': 'pdftoolkit/pdf-to-html', 'version': '0.8.2', 'commit': self.HTML_REVISION, 'path': fixture_paths.get(case['id'])}, case['id'] + ': published source provenance')
             preview = case['files'].get('htmlPreview')
             self.check(isinstance(preview, dict) and preview.get('path') == case['id'] + '/html-preview.png' and preview.get('mediaType') == 'image/png', case['id'] + ': actual HTML browser preview is present')
             with Image.open(self.path(gallery, preview['path'])) as screenshot:
@@ -324,6 +349,7 @@ class DemoValidation:
             if provenance['kind'] == 'generated':
                 self.check(b'/Artifact' in reader.pages[0].get_contents().get_data(), case['id'] + ': decorative PDF artifact is authored')
             self.source_pages(case, reader, pdf, gallery)
+            self.inspection(case, reader, elements, gallery)
             html = self.path(gallery, case['files']['html']['path']).read_text()
             doc = self.html(case, html)
             self.semantic(case, doc, reader, elements, gallery)
