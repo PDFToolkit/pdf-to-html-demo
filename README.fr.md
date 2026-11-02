@@ -12,7 +12,7 @@ votre propre PDF balisé sans l’envoyer à un serveur.
    **Voir le résultat** permet aussi de les rejoindre ; **Revenir aux exemples**
    retourne à la galerie.
 2. Comparez le PDF original à la page web, puis essayez **Résultat HTML**,
-   **Code HTML** ou **Diagnostics**. Un diagnostic explique un contenu que le
+   **Code HTML**, **Structure PDF** ou **Diagnostics**. Un diagnostic explique un contenu que le
    convertisseur n’a pas pu conserver ou a dû adapter.
 3. Utilisez **Télécharger le PDF source** sur une carte, ou **Télécharger le PDF**
    au-dessus du résultat. **Télécharger HTML + ressources** conserve le HTML
@@ -42,8 +42,9 @@ et de l’application, jamais le PDF choisi ni le résultat généré.
 
 Le profil navigateur accepte jusqu’à 8 Mio et 100 pages, avec un délai de
 30 secondes, une limite mémoire PHP de 128 Mio, des budgets cumulatifs de lecture
-et des sorties/ressources bornées. Les PDF malformés, chiffrés, non balisés ou non
-pris en charge reçoivent un message explicite. Le profil ne déduit pas la structure,
+et des sorties/ressources bornées. Les PDF malformés, chiffrés ou non pris en charge
+reçoivent un message explicite. Les PDF non balisés lisibles restent inspectables,
+même si leur dérivation HTML est indisponible. Le profil ne déduit pas la structure,
 ne fait pas d’OCR et ne reproduit pas la mise en page.
 
 Les flux JPEG, JPEG 2000 et JBIG2 peuvent être décodés par les codecs PHP
@@ -57,7 +58,7 @@ colorimétrique, une profondeur et une grille représentables ; les sémantiques
 image non prises en charge restent signalées. Cela n’ajoute pas de rendu de page.
 
 L’application active explicitement les CSS locales filtrées et le profil
-LaTeX documenté de fusion des Supplements du catalogue dans HTML 0.8.1. Ces
+LaTeX documenté de fusion des Supplements du catalogue dans HTML 0.8.2. Ces
 options conservent les styles indépendamment de l’autorisation des scripts ;
 le convertisseur filtre toujours les fonctions de ressources et le CSS non
 pris en charge. Les scripts PDF et ressources distantes sont désactivés.
@@ -80,7 +81,7 @@ des modifications ultérieures.
 ## Construire et lancer
 
 L’application utilise la version publiée, sans modification, de
-[`pdftoolkit/pdf-to-html` 0.8.1](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.8.1),
+[`pdftoolkit/pdf-to-html` 0.8.2](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.8.2),
 avec ses dépendances Reader et core verrouillées. Un nouveau Worker PHP 8.3
 WebAssembly par conversion exécute les mêmes objets PHP qu’une application native.
 Le moteur doit déclarer des entiers 64 bits et les extensions DOM, mbstring, zlib
@@ -98,7 +99,7 @@ composer install --no-dev
 npm ci --ignore-scripts
 node node_modules/playwright/cli.js install --with-deps chromium firefox
 mkdir -p _build
-git clone --branch v0.8.1 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
+git clone --branch v0.8.2 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
 python3 tools/build_demo.py --output dist --html-source _build/html-source --draft
 python3 -m http.server 8080 --directory dist
 ```
@@ -138,6 +139,7 @@ ressources statiques vérifiées ; elles n’exécutent pas PHP sur le serveur.
 ```sh
 php tests/conversion.php
 php tests/image-conversion.php
+php tests/inspection.php
 python3 -m venv _build/validation-venv
 _build/validation-venv/bin/python -m pip install --require-hashes -r tools/validation-requirements.txt
 _build/validation-venv/bin/python tools/validate_demo.py dist --report _build/validation.json
@@ -167,3 +169,37 @@ les rapports. Les contrôles du pont PHP tournent sur PHP 8.3, 8.4 et 8.5.
 Le code de l’application est sous licence MIT. PHP.wasm et les autres dépendances
 conservent leurs licences, incluses dans `assets/runtime/licenses/` et l’archive
 de l’application. Les références exactes de leurs sources accompagnent ces notices.
+
+## Inspecter le PDF source
+
+Choisir **Structure PDF** pour parcourir l’arbre des balises original, les
+références MCID/MCR/OBJR, les propriétés parsées, les identités de pages/objets
+avec génération, les namespaces, les correspondances de rôles et les métadonnées
+des fichiers associés. Le volet gauche sélectionne un nœud ou une section du
+document ; le volet droit présente ses valeurs typées. Les références d’objets
+naviguent dans la vue. **Télécharger le JSON d’inspection** enregistre la vue exacte
+avec l’empreinte SHA-256 et la taille du PDF original.
+
+Cette fonction utilise `DocumentInspector` de Reader 0.8 avant la dérivation
+HTML. Elle montre les valeurs PDF parsées avant remplacement HTML/MathML, sans
+reconstruire l’arbre à partir du HTML. Les espaces et la syntaxe lexicale
+originale ne sont pas conservés par le parseur. Les noms/chaînes incluent leurs
+octets hexadécimaux ; les entiers sont des chaînes pour conserver leur précision.
+L’inspection ne décode ni n’extrait les corps de flux et fichiers incorporés.
+Les liens, noms de fichiers et chaînes du PDF restent du texte inerte.
+
+L’inspection est en lecture seule ; l’édition et la réexportation PDF sont des
+travaux distincts. Une inspection déjà reçue reste disponible avec le PDF source
+si la dérivation HTML suivante échoue, est annulée ou dépasse son délai. Un
+nouveau fichier ou Effacer remplace/libère ce résultat. Un PDF non balisé lisible
+reste inspectable malgré l’indisponibilité de la dérivation HTML. Les PDF chiffrés
+nécessitent toujours des identifiants Reader explicites dans une application
+native ; la démo navigateur n’en collecte aucun.
+
+La vue est limitée à 5 000 nœuds, 100 pages, 2 000 objets référencés, 20 000 valeurs,
+une profondeur de 48, 2 Mio de représentation comptabilisée, 4 096 octets source
+par chaîne, 1 000 associations de fichiers et 100 diagnostics. Les indicateurs de
+limite signalent les résultats partiels ; le transport JSON final est plafonné
+à 8 Mio. Les branches et longues listes de propriétés s’affichent progressivement.
+Les vues de la galerie utilisent la même API PHP, sont inventoriées avec leurs
+empreintes et ne nécessitent aucun téléchargement du moteur navigateur.

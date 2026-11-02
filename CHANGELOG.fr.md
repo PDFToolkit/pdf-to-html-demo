@@ -4,6 +4,13 @@
 
 ## Non publié
 
+## 0.4.0 — 2026-11-02
+
+- Ajouter un onglet Structure PDF indépendant en lecture seule : balises source, propriétés typées, pages/générations d’objets, namespaces, correspondances de rôles et métadonnées des fichiers associés. Naviguer entre objets et télécharger la vue JSON bornée avec l’identité du PDF original.
+- Inspecter avant la dérivation HTML et conserver le PDF source et l’inspection reçue en cas d’échec, d’annulation ou de dépassement du délai. Inspecter les PDF non balisés lisibles et rejeter les résultats Worker périmés.
+- Inclure l’inspection native dans chaque exemple de galerie et la comparer avec pypdf et le véritable Worker navigateur. Garder les chaînes inertes, développer progressivement les branches et vérifier clavier/mobile dans Chromium et Firefox.
+- Utiliser Reader 0.8.0 et HTML 0.8.2 publiés, avec interface et guides français/anglais complets.
+
 ## 0.3.0 — 2026-10-29
 
 - Épingler le package HTML 0.8.1 publié et sa révision source exacte, avec les

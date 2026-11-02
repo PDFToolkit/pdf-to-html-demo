@@ -11,7 +11,7 @@ tagged PDF without sending it to a server.
 1. Choose an example. The page takes you to its PDF and HTML result. **See the
    result** also takes you there; **Back to examples** returns to the gallery.
 2. Compare the original PDF with the web page, then try **HTML result**, **HTML
-   code** or **Diagnostics**. A diagnostic explains content the converter could
+   code**, **PDF structure** or **Diagnostics**. A diagnostic explains content the converter could
    not preserve or had to adapt.
 3. Use **Download source PDF** on any example card, or **Download PDF** above its
    result. **Download HTML + assets** saves the exact HTML with its supporting
@@ -39,7 +39,7 @@ input or its generated output.
 
 The browser profile accepts up to 8 MiB and 100 pages, with a 30-second deadline,
 128 MiB PHP memory limit, cumulative parser limits and bounded output/assets.
-Malformed, encrypted, untagged and unsupported PDFs receive explicit messages.
+Malformed, encrypted and unsupported PDFs receive explicit messages. Readable untagged PDFs can be inspected even though HTML derivation is unavailable.
 It does not infer document structure, perform OCR or reproduce page layout.
 
 JPEG, JPEG 2000 and JBIG2 image streams can be decoded by the bundled PHP
@@ -52,7 +52,7 @@ requires a representable colour space, depth and sampling grid; unsupported
 image semantics remain explicit diagnostics. This does not add page rendering.
 
 The application explicitly enables filtered local CSS and the documented LaTeX
-catalogue Supplement merging profile from HTML 0.8.1. These options preserve
+catalogue Supplement merging profile from HTML 0.8.2. These options preserve
 styles independently of script permission; the converter still filters resource
 functions and unsupported CSS. PDF scripts and remote resources are disabled.
 Results appear in an isolated
@@ -69,10 +69,39 @@ default browser profile can produce a different result, explained by diagnostics
 The signature example uses a public test certificate, checks integrity and does
 not establish PKI trust or permission for later changes.
 
+## Inspect the PDF source
+
+Choose **PDF structure** to explore the original tag tree, MCID/MCR/OBJR content
+references, parsed properties, page/object identities including generations,
+namespaces, role mappings and associated-file metadata. The left pane selects
+nodes or document sections; the right pane shows typed values. Object references
+navigate within the snapshot. **Download inspection JSON** saves the exact
+snapshot with the original PDF's SHA-256 and byte length.
+
+This uses Reader 0.8's independent `DocumentInspector`, before HTML derivation.
+It shows parsed PDF values before HTML/MathML replacement, not a reconstruction
+of the HTML tree. Original whitespace and lexical spelling are not preserved by
+the parser. Names/strings include hexadecimal source bytes; integers are strings
+to preserve precision. Stream bodies and embedded files are never decoded or
+extracted by inspection. PDF links, filenames and strings are inert text.
+
+Inspection is read-only. Editing and PDF re-export are separate work. An
+inspection already received stays available, together with the source PDF, if
+subsequent HTML derivation fails, is cancelled or times out. A new file or Clear
+replaces/releases that result. Encrypted inputs still need explicit Reader
+credentials in a native application; this browser demo collects none.
+
+The snapshot is limited to 5,000 tree nodes, 100 pages, 2,000 referenced objects,
+20,000 values, depth 48, 2 MiB of accounted representation data, 4,096 source bytes
+per string, 1,000 file associations and 100 diagnostics. Limit indicators describe
+partial results; the final JSON transport is capped at 8 MiB. Tree branches and
+long property lists are displayed progressively. Gallery snapshots use the same
+PHP API, are inventoried with hashes and need no browser runtime download.
+
 ## Build and run
 
 The application uses the unmodified, released
-[`pdftoolkit/pdf-to-html` 0.8.1](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.8.1)
+[`pdftoolkit/pdf-to-html` 0.8.2](https://github.com/PDFToolkit/pdf-to-html/releases/tag/v0.8.2)
 with its locked Reader and core dependencies. A fresh PHP 8.3 WebAssembly Worker
 per conversion runs the same PHP objects used by a native application. The
 runtime must report 64-bit integers and DOM, mbstring, zlib and ZIP support.
@@ -89,7 +118,7 @@ composer install --no-dev
 npm ci --ignore-scripts
 node node_modules/playwright/cli.js install --with-deps chromium firefox
 mkdir -p _build
-git clone --branch v0.8.1 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
+git clone --branch v0.8.2 --depth 1 https://github.com/PDFToolkit/pdf-to-html.git _build/html-source
 python3 tools/build_demo.py --output dist --html-source _build/html-source --draft
 python3 -m http.server 8080 --directory dist
 ```
@@ -126,6 +155,7 @@ the verified static assets; they do not run PHP on the server.
 ```sh
 php tests/conversion.php
 php tests/image-conversion.php
+php tests/inspection.php
 python3 -m venv _build/validation-venv
 _build/validation-venv/bin/python -m pip install --require-hashes -r tools/validation-requirements.txt
 _build/validation-venv/bin/python tools/validate_demo.py dist --report _build/validation.json

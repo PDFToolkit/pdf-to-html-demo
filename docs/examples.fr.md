@@ -3,8 +3,8 @@
 [English](examples.md) · [Français](examples.fr.md)
 
 La galerie part de véritables octets PDF et les convertit avec la version publiée
-**0.8.1** de `pdftoolkit/pdf-to-html`, révision
-`b60a1816de2a340fdf9ddd01c4ac70d4f40f5d2f`. Son HTML est la sortie exacte du
+**0.8.2** de `pdftoolkit/pdf-to-html`, révision
+`89c1328ece98a131866810d3f0e21c752fbf5c09`. Son HTML est la sortie exacte du
 convertisseur. L’application ne fabrique pas du HTML pour simuler une conversion.
 
 `src/Gallery/CaseFactory.php` crée six PDF avec des objets explicites du core :
@@ -147,7 +147,7 @@ réelle de Poppler.
 ```sh
 composer install --no-dev --prefer-dist --no-interaction
 php bin/build-gallery.php --output dist/gallery \
-  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.3.0
+  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.4.0
 ```
 
 `--html-source` désigne le checkout publié du module HTML contenant
@@ -199,11 +199,14 @@ et son verrou Composer fournissent le contexte exécutable.
 `dist/gallery/gallery-manifest.json` utilise la version 1 du schéma. Ses chemins
 sont relatifs à ce dossier. `generator` identifie le package de démo, sa version
 et son commit exact. `htmlPackage` identifie la version et la révision du
-convertisseur. Chaque cas contient `title`, `description` et `observations`
+convertisseur. `readerPackage` identifie le Reader publié utilisé pour l’inspection
+indépendante. Chaque cas contient `title`, `description` et `observations`
 bilingues, son `profile`, ses `capabilities`, sa provenance, ses caractéristiques
 `expected` et ces fichiers :
 
 - `<id>/source.pdf` : octets originaux.
+- `<id>/inspection.json` : inspection source bornée avec l’identité du PDF original,
+  ses balises et propriétés typées, avant dérivation HTML.
 - `<id>/result.html.txt` : HTML dérivé exact, servi en `text/plain`.
 - `<id>/page-1.png` : aperçu du PDF source, dimensions réelles dans `pages`.
 - `<id>/example.php.txt` : code exact de la fabrique, servi en `text/plain`.
@@ -214,7 +217,7 @@ bilingues, son `profile`, ses `capabilities`, sa provenance, ses caractéristiqu
 Chaque fichier comporte `path`, `bytes`, `sha256` et `mediaType`. Le tableau racine
 `assets` inventorie tous les fichiers livrés sauf le manifeste lui-même, y
 compris le code auxiliaire. `source.kind` vaut `generated` (commit de cette démo)
-ou `published-fixture` (chemin exact du cas HTML 0.8.1). Ce builder ne produit aucun
+ou `published-fixture` (chemin exact du cas HTML 0.8.2). Ce builder ne produit aucun
 document `.html` directement navigable. L’application vérifie et isole les
 aperçus séparément ; un nom de fichier ou une empreinte ne constitue pas à lui
 seul une autorisation d’exécuter un script.

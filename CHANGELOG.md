@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+## 0.4.0 — 2026-11-02
+
+- Add an independent, read-only PDF structure tab with source tag trees, typed properties, pages/object generations, namespaces, role mappings and associated-file metadata. Navigate referenced objects and download the exact bounded JSON snapshot with original PDF identity.
+- Inspect before HTML derivation and preserve the source PDF and received inspection if derivation fails, is cancelled or times out. Inspect readable untagged PDFs and reject stale Worker results.
+- Include native inspection JSON in every gallery example and compare it with pypdf and the actual browser Worker. Keep strings inert, expand branches progressively and verify keyboard/mobile behavior in Chromium and Firefox.
+- Use released Reader 0.8.0 and HTML 0.8.2, with complete English/French interface and guides.
+
 ## 0.3.0 — 2026-10-29
 
 - Pin the released HTML 0.8.1 package and exact source revision, with stable
