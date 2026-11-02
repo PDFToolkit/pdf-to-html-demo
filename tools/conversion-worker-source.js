@@ -69,6 +69,20 @@ class ConversionWorker {
             php.mkdir('/job');
             php.writeFile('/job/input.pdf', new Uint8Array(message.input));
             php.writeFile('/job/request.json', JSON.stringify({ filename: message.filename }));
+            this.#progress('inspecting');
+            // Publish the independent Reader result before attempting HTML. A later
+            // conversion error or timeout must not discard an already readable PDF.
+            try {
+                const inspectionResponse = await php.run({ scriptPath: '/app/bin/inspect.php' });
+                const inspection = inspectionResponse.exitCode === 0 ? JSON.parse(inspectionResponse.text) : null;
+                if (inspection?.ok === true) {
+                    self.postMessage({ type: 'inspection', id: this.#id, inspection: inspection.result });
+                } else {
+                    self.postMessage({ type: 'inspection-error', id: this.#id, error: { code: inspection?.error?.code ?? 'inspection_failed', message: 'The original PDF structure could not be inspected.' } });
+                }
+            } catch {
+                self.postMessage({ type: 'inspection-error', id: this.#id, error: { code: 'inspection_failed', message: 'The original PDF structure could not be inspected.' } });
+            }
             this.#progress('converting');
             const response = await php.run({ scriptPath: '/app/bin/convert.php' });
             if (response.exitCode !== 0) {

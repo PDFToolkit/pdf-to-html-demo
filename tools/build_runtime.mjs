@@ -15,8 +15,8 @@ await fs.mkdir(assets, { recursive: true });
 const lock = JSON.parse(await fs.readFile(path.join(root, 'composer.lock'), 'utf8'));
 const expectedReferences = {
     'pdftoolkit/pdf-codecs': '1f82ae19d6dd874c574a5601d37f3ac63e0d4170',
-    'pdftoolkit/pdf-to-html': 'b60a1816de2a340fdf9ddd01c4ac70d4f40f5d2f',
-    'pdftoolkit/pdf-reader': '8f0a1a447da7812f515ac9c307f8431531d29655',
+    'pdftoolkit/pdf-to-html': '89c1328ece98a131866810d3f0e21c752fbf5c09',
+    'pdftoolkit/pdf-reader': '007ed70a2e77d62df8d7f8775382af594070714e',
     'roukmoute/pdf': 'ea9ae2c134bbaf5fc3a22dbc7c81ff8e7b29a6cc',
 };
 const installed = JSON.parse(await fs.readFile(path.join(root, 'vendor/composer/installed.json'), 'utf8'));
@@ -48,6 +48,8 @@ async function addTree(relative) {
     }
 }
 await addTree('src/Conversion');
+await addTree('src/Inspection');
+await addFile('bin/inspect.php');
 await addFile('bin/convert.php');
 await addFile('vendor/autoload.php');
 await addTree('vendor/composer');

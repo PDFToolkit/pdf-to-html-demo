@@ -6,11 +6,14 @@ namespace PDFToolkit\Demo\Gallery;
 
 use Composer\InstalledVersions;
 use PDF\Html\DerivationResult;
+use PDFToolkit\Demo\Conversion\ConversionInput;
+use PDFToolkit\Demo\Inspection\Inspector;
 
 /** Filesystem operations belong to this reproducible build application. */
 final readonly class GalleryBuilder
 {
-    public const HTML_REVISION = 'b60a1816de2a340fdf9ddd01c4ac70d4f40f5d2f';
+    public const READER_REVISION = '007ed70a2e77d62df8d7f8775382af594070714e';
+    public const HTML_REVISION = '89c1328ece98a131866810d3f0e21c752fbf5c09';
     private const SIGNATURE_SHA = '8b55dfe5e157d024d88703c4cd761f0bb77dfd94178536d5f6f06ea09f1bd10e';
     private const CERTIFICATE_SHA = '61ecaec8b4fc69746718148aedaec21ee853c583a8e5e05967dd494dc54ed1d6';
 
@@ -19,10 +22,13 @@ final readonly class GalleryBuilder
     }
 
     /** @return array<string,mixed> */
-    public function build(string $output, ?string $revision, string $version = '0.3.0', ?string $htmlSource = null, bool $draft = false): array
+    public function build(string $output, ?string $revision, string $version = '0.4.0', ?string $htmlSource = null, bool $draft = false): array
     {
-        if (InstalledVersions::getReference('pdftoolkit/pdf-to-html') !== self::HTML_REVISION || ltrim(InstalledVersions::getPrettyVersion('pdftoolkit/pdf-to-html') ?? '', 'v') !== '0.8.1') {
-            throw new \RuntimeException('Build the gallery with the exact released HTML 0.8.1 dependency.');
+        if (InstalledVersions::getReference('pdftoolkit/pdf-to-html') !== self::HTML_REVISION || ltrim(InstalledVersions::getPrettyVersion('pdftoolkit/pdf-to-html') ?? '', 'v') !== '0.8.2') {
+            throw new \RuntimeException('Build the gallery with the exact released HTML 0.8.2 dependency.');
+        }
+        if (InstalledVersions::getReference('pdftoolkit/pdf-reader') !== self::READER_REVISION || ltrim(InstalledVersions::getPrettyVersion('pdftoolkit/pdf-reader') ?? '', 'v') !== '0.8.0') {
+            throw new \RuntimeException('Build the inspection gallery with the exact released Reader 0.8.0 dependency.');
         }
         if (preg_match('/^\d+\.\d+\.\d+$/D', $version) !== 1) {
             throw new \InvalidArgumentException('The gallery version must be an explicit stable version.');
@@ -56,6 +62,7 @@ final readonly class GalleryBuilder
                 $this->assertOutput($case, $result);
                 $preview = $this->rasterizer->page($case->pdf);
                 $pdf = $this->write($stage, $case->id . '/source.pdf', $case->pdf, 'application/pdf', $inventory);
+                $inspection = $this->write($stage, $case->id . '/inspection.json', $this->json((new Inspector())->inspect(new ConversionInput($case->pdf, $case->id . '.pdf'))), 'application/json', $inventory);
                 $html = $this->write($stage, $case->id . '/result.html.txt', $result->html, 'text/plain', $inventory);
                 $png = $this->write($stage, $case->id . '/page-1.png', $preview['bytes'], 'image/png', $inventory);
                 $code = $case->latex === null
@@ -66,7 +73,7 @@ final readonly class GalleryBuilder
                     $assets[] = $this->write($stage, $case->id . '/' . $asset->filename, $asset->bytes, $asset->mediaType, $inventory);
                 }
                 $diagnostics = $this->write($stage, $case->id . '/diagnostics.json', $this->json(['profile' => $case->profile, 'sourceSha256' => $pdf['sha256'], 'htmlSha256' => $html['sha256'], 'diagnostics' => $result->diagnostics]), 'application/json', $inventory);
-                $files = ['pdf' => $pdf, 'html' => $html, 'preview' => $png, 'code' => $code, 'diagnostics' => $diagnostics, 'assets' => $assets];
+                $files = ['pdf' => $pdf, 'html' => $html, 'preview' => $png, 'code' => $code, 'diagnostics' => $diagnostics, 'inspection' => $inspection, 'assets' => $assets];
                 if ($case->latex !== null) {
                     $files['latexProvenance'] = $this->write($stage, $case->id . '/latex-provenance.json', $case->latex->provenance, 'application/json', $inventory);
                 }
@@ -80,12 +87,16 @@ final readonly class GalleryBuilder
                 }
                 $source = $case->fixturePath === null
                     ? ['kind' => 'generated', ...$generator, 'path' => $case->image === null ? 'src/Gallery/CaseFactory.php' : 'src/Gallery/ImageCaseFactory.php']
-                    : ['kind' => 'published-fixture', 'package' => 'pdftoolkit/pdf-to-html', 'version' => '0.8.1', 'commit' => self::HTML_REVISION, 'path' => $case->fixturePath];
+                    : ['kind' => 'published-fixture', 'package' => 'pdftoolkit/pdf-to-html', 'version' => '0.8.2', 'commit' => self::HTML_REVISION, 'path' => $case->fixturePath];
                 $items[] = ['id' => $case->id, 'title' => $case->title, 'description' => $case->description, 'observations' => $case->observations, 'profile' => $case->profile, 'capabilities' => $case->capabilities, 'source' => $source, 'files' => $files, 'pages' => [[...$png, 'width' => $preview['width'], 'height' => $preview['height']]], 'expected' => $case->expected];
             }
             // The per-case source excerpt is the actual factory. Include its full object/build context once.
             $sources = glob($this->root . '/src/Gallery/*.php') ?: [];
             $sources[] = $this->root . '/bin/build-gallery.php';
+            $sources[] = $this->root . '/bin/inspect.php';
+            foreach (glob($this->root . '/src/Inspection/*.php') ?: [] as $path) {
+                $sources[] = $path;
+            }
             $sources[] = $this->root . '/tools/generate_image_examples.py';
             $sources[] = $this->root . '/resources/images/manifest.json';
             foreach (glob($this->root . '/src/Conversion/*.php') ?: [] as $path) {
@@ -97,7 +108,7 @@ final readonly class GalleryBuilder
                 $this->write($stage, 'source/' . $relative . '.txt', $this->read($path), 'text/plain', $inventory);
             }
             usort($inventory, static fn (array $a, array $b): int => $a['path'] <=> $b['path']);
-            $manifest = ['schemaVersion' => 1, 'draft' => $draft, 'generator' => $generator, 'htmlPackage' => ['version' => '0.8.1', 'revision' => self::HTML_REVISION], 'rendering' => ['engine' => 'Poppler pdftoppm', 'version' => $this->rasterizer->version(), 'maximumDimension' => 1600], 'cases' => $items, 'assets' => $inventory];
+            $manifest = ['schemaVersion' => 1, 'draft' => $draft, 'generator' => $generator, 'htmlPackage' => ['version' => '0.8.2', 'revision' => self::HTML_REVISION], 'readerPackage' => ['version' => '0.8.0', 'revision' => self::READER_REVISION], 'rendering' => ['engine' => 'Poppler pdftoppm', 'version' => $this->rasterizer->version(), 'maximumDimension' => 1600], 'cases' => $items, 'assets' => $inventory];
             if (file_put_contents($stage . '/gallery-manifest.json', $this->json($manifest)) === false) {
                 throw new \RuntimeException('Cannot write the gallery manifest.');
             }
@@ -118,12 +129,12 @@ final readonly class GalleryBuilder
         }
         $root = realpath($source);
         if ($root === false) {
-            throw new \InvalidArgumentException('--html-source must identify the checked-out HTML 0.8.1 source.');
+            throw new \InvalidArgumentException('--html-source must identify the checked-out HTML 0.8.2 source.');
         }
         $pdf = $this->read($root . '/tests/Fixtures/signatures/signed-padded.pdf');
         $certificate = $this->read($root . '/tests/Fixtures/signatures/signer.der');
         if (!hash_equals(self::SIGNATURE_SHA, hash('sha256', $pdf)) || !hash_equals(self::CERTIFICATE_SHA, hash('sha256', $certificate))) {
-            throw new \RuntimeException('The signature PDF and public certificate must match the published 0.8.1 fixture.');
+            throw new \RuntimeException('The signature PDF and public certificate must match the published 0.8.2 fixture.');
         }
         return [$pdf, $certificate];
     }
@@ -199,8 +210,8 @@ final readonly class GalleryBuilder
         return $bytes === false ? throw new \RuntimeException('Cannot read the gallery input.') : $bytes;
     }
 
-    /** @param array<string,mixed> $value */
-    private function json(array $value): string
+    /** @param array<string,mixed>|\JsonSerializable $value */
+    private function json(array|\JsonSerializable $value): string
     {
         return json_encode($value, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
     }

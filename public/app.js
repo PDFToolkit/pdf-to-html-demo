@@ -21,14 +21,26 @@ const COPY = {
     runtime_initialization: 'The browser could not initialize the local PHP engine. Check whether WebAssembly or Worker scripts are blocked, then reload the page.',
     library_initialization: 'The local PDF converter could not be prepared. Reload the page to try again.',
     conversionError: 'This PDF could not be converted with the demonstration profile.',
-    compare: 'Compare', html: 'HTML result', pdf: 'Source PDF', code: 'HTML code', diagnostics: 'Diagnostics',
+    compare: 'Compare', html: 'HTML result', pdf: 'Source PDF', code: 'HTML code', diagnostics: 'Diagnostics', structure: 'PDF structure',
+    inspecting: 'Inspecting the original PDF structure locally…',
+    structureHelp: 'Explore the structure read from the original PDF, independently of HTML conversion. Values are displayed as inert text; associated files and streams are not opened or executed. This is an inspection, not a PDF conformance check.',
+    structureTree: 'Tag tree', structureDetails: 'Original properties', structureDocument: 'Document', structurePages: 'Pages', structureRoles: 'Role mappings', structureFiles: 'Associated files',
+    structureEmpty: 'No structure tree was found. Document properties and page references remain available.',
+    structureMissing: 'Structure inspection is unavailable for this document. HTML conversion has its own result and limits.',
+    structurePending: 'The PDF structure is being read…', structurePartial: 'This inspection is incomplete. Some information was omitted by a processing limit or an unreadable reference; see the diagnostics below.',
+    structureDisplayLimit: 'The display limit was reached. Download the inspection JSON to read the captured information.',
+    structureMore: 'Show more', structureSelect: 'Show properties', structureReference: 'Object reference', structurePage: 'Page', structureChildren: 'Children',
+    structureDownload: 'Download inspection JSON', structureSource: 'Original PDF SHA-256', structureNoEntries: 'No entries',
+    htmlPending: 'HTML conversion is still running. The PDF structure and original file are already available.',
+    htmlUnavailable: 'HTML conversion could not finish. The original PDF and any completed structure inspection remain available.',
+    partialComplete: 'The PDF was inspected, but HTML conversion could not finish. Its original structure is still available.',
     source: 'Source PDF', result: 'Derived HTML', semantic: 'Semantic, reflowable content',
     downloadPdf: 'Download PDF', downloadHtml: 'Download HTML + assets', copy: 'Copy HTML', copied: 'Copied',
-    observe: 'What to try', inputLabel: 'Your document', inputDescription: 'Converted now in your browser with the default safe profile.',
+    observe: 'What to try', inputLabel: 'Your document', inputDescription: 'Read locally in your browser. Structure inspection and HTML conversion have separate results.',
     noDiagnostics: 'No diagnostics were reported for this conversion.',
     diagnosticHelp: 'These messages describe omissions, adaptations or unsupported features in this particular conversion.',
     provenance: 'Reproduce this example', generator: 'View the generating source code', downloadCode: 'Download source code', latexProvenance: 'Download LaTeX build provenance',
-    generated: 'Pre-generated with PDFToolkit', live: 'Converted in your browser',
+    generated: 'Pre-generated with PDFToolkit', live: 'Processed in your browser',
     version: 'HTML converter', elapsed: 'Conversion time', bytes: 'Source size',
     boundary: 'This converts tagged PDF structure into HTML. It is not OCR or a page-layout replica. PDF scripts and remote resources are disabled for your files; missing graphics capabilities are reported in the diagnostics.',
     profileBasic: 'Default safe profile', profileReset: 'Library-owned form reset enabled',
@@ -65,14 +77,26 @@ const COPY = {
     runtime_initialization: 'Le navigateur n’a pas pu initialiser le moteur PHP local. Vérifiez si WebAssembly ou les scripts Worker sont bloqués, puis rechargez la page.',
     library_initialization: 'Le convertisseur PDF local n’a pas pu être préparé. Rechargez la page pour réessayer.',
     conversionError: 'Ce PDF n’a pas pu être converti avec le profil de démonstration.',
-    compare: 'Comparer', html: 'Résultat HTML', pdf: 'PDF source', code: 'Code HTML', diagnostics: 'Diagnostics',
+    compare: 'Comparer', html: 'Résultat HTML', pdf: 'PDF source', code: 'Code HTML', diagnostics: 'Diagnostics', structure: 'Structure PDF',
+    inspecting: 'Inspection locale de la structure PDF originale…',
+    structureHelp: 'Explorez la structure lue dans le PDF original, indépendamment de sa conversion HTML. Les valeurs sont du texte inerte ; les fichiers associés et les flux ne sont ni ouverts ni exécutés. Il s’agit d’une inspection, pas d’un contrôle de conformité PDF.',
+    structureTree: 'Arbre des balises', structureDetails: 'Propriétés originales', structureDocument: 'Document', structurePages: 'Pages', structureRoles: 'Correspondances de rôles', structureFiles: 'Fichiers associés',
+    structureEmpty: 'Aucun arbre de structure trouvé. Les propriétés du document et les références aux pages restent disponibles.',
+    structureMissing: 'L’inspection de structure est indisponible pour ce document. La conversion HTML possède son propre résultat et ses propres limites.',
+    structurePending: 'Lecture de la structure PDF en cours…', structurePartial: 'Cette inspection est incomplète. Certaines informations ont été omises en raison d’une limite ou d’une référence illisible ; consultez les diagnostics ci-dessous.',
+    structureDisplayLimit: 'La limite d’affichage est atteinte. Téléchargez le JSON d’inspection pour consulter les informations recueillies.',
+    structureMore: 'Afficher la suite', structureSelect: 'Afficher les propriétés', structureReference: 'Référence d’objet', structurePage: 'Page', structureChildren: 'Enfants',
+    structureDownload: 'Télécharger le JSON d’inspection', structureSource: 'SHA-256 du PDF original', structureNoEntries: 'Aucune entrée',
+    htmlPending: 'La conversion HTML est encore en cours. La structure PDF et le fichier original sont déjà disponibles.',
+    htmlUnavailable: 'La conversion HTML n’a pas pu aboutir. Le PDF original et toute inspection de structure terminée restent disponibles.',
+    partialComplete: 'Le PDF a été inspecté, mais la conversion HTML n’a pas pu aboutir. Sa structure originale reste disponible.',
     source: 'PDF source', result: 'HTML dérivé', semantic: 'Contenu sémantique et adaptable',
     downloadPdf: 'Télécharger le PDF', downloadHtml: 'Télécharger HTML + ressources', copy: 'Copier le HTML', copied: 'Copié',
-    observe: 'À essayer', inputLabel: 'Votre document', inputDescription: 'Converti maintenant dans votre navigateur avec le profil sûr par défaut.',
+    observe: 'À essayer', inputLabel: 'Votre document', inputDescription: 'Lu localement dans votre navigateur. L’inspection de structure et la conversion HTML ont des résultats distincts.',
     noDiagnostics: 'Aucun diagnostic signalé pour cette conversion.',
     diagnosticHelp: 'Ces messages décrivent les omissions, adaptations ou fonctions non prises en charge pour cette conversion précise.',
     provenance: 'Reproduire cet exemple', generator: 'Voir le code source de génération', downloadCode: 'Télécharger le code source', latexProvenance: 'Télécharger la provenance du build LaTeX',
-    generated: 'Pré-généré avec PDFToolkit', live: 'Converti dans votre navigateur',
+    generated: 'Pré-généré avec PDFToolkit', live: 'Traité dans votre navigateur',
     version: 'Convertisseur HTML', elapsed: 'Temps de conversion', bytes: 'Taille de la source',
     boundary: 'Le convertisseur transforme la structure d’un PDF balisé en HTML. Il ne fait ni OCR ni reproduction de la mise en page. Les scripts PDF et ressources distantes sont désactivés pour vos fichiers ; les capacités graphiques manquantes sont signalées dans les diagnostics.',
     profileBasic: 'Profil sûr par défaut', profileReset: 'Réinitialisation gérée par la bibliothèque',
@@ -283,6 +307,200 @@ export class HtmlSourceView {
   }
 }
 
+/** Validates the bounded, versioned Reader snapshot without interpreting PDF values. */
+export class PdfInspection {
+  constructor(wrapper) {
+    const snapshot = wrapper?.inspection;
+    if (!wrapper || !/^[a-f0-9]{64}$/.test(wrapper.source?.sha256) || !Number.isSafeInteger(wrapper.source?.bytes)
+        || wrapper.source.bytes < 1 || wrapper.source.bytes > 8 * 1024 * 1024 || snapshot?.schemaVersion !== 1
+        || !snapshot.document || typeof snapshot.document !== 'object' || typeof snapshot.truncated !== 'boolean') {
+      throw new Error('Invalid PDF inspection');
+    }
+    for (const key of ['pages', 'roots', 'nodes', 'objects', 'roleMappings', 'associatedFiles', 'diagnostics']) {
+      if (!Array.isArray(snapshot[key]) || snapshot[key].length > 30000) throw new Error('Invalid PDF inspection collection');
+    }
+    // Reject excessive data before formatting it or constructing any DOM nodes.
+    const pending = [[wrapper, 0]];
+    let values = 0, characters = 0;
+    while (pending.length) {
+      const [value, depth] = pending.pop();
+      // Typed dictionaries add arrays and entry objects around each PDF level.
+      if (++values > 250000 || depth > 256) throw new Error('PDF inspection exceeds its display input budget');
+      if (typeof value === 'string') characters += value.length;
+      else if (value && typeof value === 'object') {
+        const entries = Object.entries(value);
+        if (entries.length > 30000) throw new Error('PDF inspection collection exceeds its budget');
+        for (const [key, child] of entries) { characters += key.length; pending.push([child, depth + 1]); }
+      } else if (value !== null && !['number', 'boolean'].includes(typeof value)) throw new Error('Invalid PDF inspection value');
+      if (characters > 8 * 1024 * 1024) throw new Error('PDF inspection exceeds its text budget');
+    }
+    this.json = JSON.stringify(wrapper);
+    if (new TextEncoder().encode(this.json).byteLength > 8 * 1024 * 1024) throw new Error('PDF inspection exceeds its byte budget');
+    this.wrapper = wrapper;
+    this.snapshot = snapshot;
+    this.nodes = new Map();
+    for (const node of snapshot.nodes) {
+      if (!node || typeof node.id !== 'string' || node.id.length > 256 || this.nodes.has(node.id)
+          || !Array.isArray(node.children) || !node.children.every(id => typeof id === 'string' && id.length <= 256)) throw new Error('Invalid PDF inspection node');
+      this.nodes.set(node.id, node);
+    }
+    if (!snapshot.roots.every(id => typeof id === 'string' && this.nodes.has(id))) throw new Error('Invalid PDF inspection roots');
+    this.objects = new Map(snapshot.objects.map(object => [object.id, object]));
+  }
+}
+
+/** Native disclosures expose original values; nothing from the PDF becomes markup or a URL. */
+export class PdfStructureView {
+  constructor(inspection, copy, download = () => {}) {
+    this.inspection = inspection instanceof PdfInspection ? inspection : new PdfInspection(inspection);
+    this.t = copy;
+    this.download = download;
+    this.rows = 0;
+  }
+  element(tag, className, text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+  }
+  reference(reference) {
+    return reference && typeof reference.number === 'string' && Number.isInteger(reference.generation)
+      ? reference.number + ' ' + reference.generation + ' R' : '—';
+  }
+  label(node) {
+    const role = node.role?.type === 'name' ? node.role.preview : node.kind;
+    return [role, node.reference ? this.reference(node.reference) : '', node.page?.number ? this.t.structurePage + ' ' + node.page.number : '', node.mcid !== null && node.mcid !== undefined ? 'MCID ' + node.mcid : ''].filter(Boolean).join(' · ');
+  }
+  render() {
+    const data = this.inspection.snapshot;
+    const section = this.element('section', 'demo-structure');
+    section.append(this.element('p', 'demo-structure-help', this.t.structureHelp));
+    const actions = this.element('div', 'demo-actions');
+    const download = this.element('button', 'demo-button', this.t.structureDownload); download.type = 'button';
+    download.addEventListener('click', () => this.download(this.inspection.json)); actions.append(download); section.append(actions);
+    const source = this.element('p', 'demo-structure-source'); source.append(this.element('strong', '', this.t.structureSource + ': '), this.element('code', '', this.inspection.wrapper.source.sha256)); section.append(source);
+    if (data.truncated) { const notice = this.element('p', 'demo-structure-warning', this.t.structurePartial); notice.setAttribute('role', 'status'); section.append(notice); }
+    const overview = this.element('div', 'demo-structure-overview');
+    this.collection(overview, this.t.structureDocument, [data.document], entry => this.value(entry));
+    this.collection(overview, this.t.structurePages, data.pages, page => this.record(this.t.structurePage + ' ' + page.number + ' · ' + this.reference(page.reference), page));
+    this.collection(overview, this.t.structureRoles, data.roleMappings, entry => this.record(entry.source?.preview ?? '?', entry));
+    this.collection(overview, this.t.structureFiles, data.associatedFiles, entry => this.record(entry.filename ?? this.reference(entry.reference), entry));
+    this.collection(overview, this.t.structureReference, data.objects, entry => {
+      const container = this.element('div');
+      const button = this.element('button', 'demo-structure-object demo-button', this.reference(entry.reference) + ' · ' + entry.status); button.type = 'button';
+      button.addEventListener('click', () => this.showObject(entry, true)); container.append(button); return container;
+    });
+    this.collection(overview, this.t.diagnostics, data.diagnostics, entry => this.record(entry.code, entry));
+    section.append(overview);
+    const split = this.element('div', 'demo-structure-split');
+    const treePane = this.element('div', 'demo-structure-tree-pane'); treePane.append(this.element('h4', '', this.t.structureTree));
+    this.limitNotice = this.element('p', 'demo-structure-warning', this.t.structureDisplayLimit); this.limitNotice.hidden = true;
+    treePane.append(this.limitNotice);
+    if (data.roots.length) this.tree(treePane, data.roots, new Set());
+    else treePane.append(this.element('p', '', this.t.structureEmpty));
+    this.detailPane = this.element('section', 'demo-structure-detail');
+    this.detailHeading = this.element('h4', '', this.t.structureDetails); this.detailHeading.tabIndex = -1;
+    this.detailBody = this.element('div'); this.detailPane.append(this.detailHeading, this.detailBody);
+    split.append(treePane, this.detailPane); section.append(split);
+    if (data.roots.length) this.showNode(this.inspection.nodes.get(data.roots[0]));
+    else this.detailBody.append(this.value(data.document));
+    return section;
+  }
+  collection(parent, title, entries, render) {
+    const details = this.element('details', 'demo-structure-collection');
+    details.append(this.element('summary', '', title + ' (' + entries.length + ')'));
+    let initialized = false;
+    details.addEventListener('toggle', () => {
+      if (!details.open || initialized) return;
+      initialized = true;
+      if (entries.length) this.page(details, entries, render);
+      else details.append(this.element('p', '', this.t.structureNoEntries));
+    });
+    parent.append(details);
+  }
+  page(parent, entries, render) {
+    let offset = 0;
+    const items = this.element('ul', 'demo-structure-list'); parent.append(items);
+    const more = this.element('button', 'demo-button demo-structure-more', this.t.structureMore); more.type = 'button';
+    const append = () => {
+      const end = Math.min(offset + 50, entries.length);
+      for (; offset < end; offset++) {
+        if (++this.rows > 2000) { this.limitNotice.hidden = false; more.remove(); return; }
+        const item = this.element('li'); item.append(render(entries[offset])); items.append(item);
+      }
+      if (offset === entries.length) more.remove();
+      else { more.textContent = this.t.structureMore + ' (' + (entries.length - offset) + ')'; parent.append(more); }
+    };
+    more.addEventListener('click', append); append();
+  }
+  tree(parent, ids, ancestors) {
+    this.page(parent, ids, id => {
+      const node = this.inspection.nodes.get(id);
+      if (!node) return this.element('span', '', id + ' · ' + this.t.structureMissing);
+      if (ancestors.has(id)) return this.element('span', '', this.label(node) + ' · cycle');
+      if (!node.children.length) {
+        const button = this.element('button', 'demo-structure-node', this.label(node)); button.type = 'button'; button.dataset.structureNode = id;
+        button.addEventListener('click', () => this.showNode(node, true)); return button;
+      }
+      const details = this.element('details', 'demo-structure-branch');
+      const summary = this.element('summary', '', this.label(node)); summary.dataset.structureNode = id;
+      summary.addEventListener('click', () => this.showNode(node)); details.append(summary);
+      let initialized = false;
+      details.addEventListener('toggle', () => {
+        if (!details.open || initialized) return;
+        initialized = true;
+        const select = this.element('button', 'demo-button demo-structure-select', this.t.structureSelect); select.type = 'button';
+        select.addEventListener('click', () => this.showNode(node, true)); details.append(select);
+        this.tree(details, node.children, new Set([...ancestors, id]));
+      });
+      return details;
+    });
+  }
+  showNode(node, focus = false) {
+    this.detailHeading.textContent = this.t.structureDetails + ' — ' + this.label(node);
+    this.detailBody.replaceChildren(this.value(node));
+    this.references(node.properties);
+    if (focus) this.detailHeading.focus({preventScroll: false});
+  }
+  showObject(object, focus = false) {
+    this.detailHeading.textContent = this.t.structureReference + ' — ' + this.reference(object.reference);
+    this.detailBody.replaceChildren(this.value(object));
+    this.references(object.value);
+    if (focus) this.detailHeading.focus({preventScroll: false});
+  }
+  references(value) {
+    const stack = [value], targets = new Set();
+    let visited = 0;
+    while (stack.length && ++visited <= 2000 && targets.size < 20) {
+      const item = stack.pop();
+      if (!item || typeof item !== 'object') continue;
+      if (item.type === 'reference' && typeof item.target === 'string' && this.inspection.objects.has(item.target)) targets.add(item.target);
+      for (const child of Object.values(item)) if (child && typeof child === 'object') stack.push(child);
+    }
+    if (!targets.size) return;
+    const links = this.element('div', 'demo-actions');
+    for (const target of targets) {
+      const object = this.inspection.objects.get(target);
+      const button = this.element('button', 'demo-button', this.t.structureReference + ' ' + this.reference(object.reference)); button.type = 'button';
+      button.addEventListener('click', () => this.showObject(object, true)); links.append(button);
+    }
+    this.detailBody.append(links);
+  }
+  record(title, value) {
+    const details = this.element('details', 'demo-structure-record'); details.append(this.element('summary', '', title));
+    let initialized = false;
+    details.addEventListener('toggle', () => { if (details.open && !initialized) { initialized = true; details.append(this.value(value)); } });
+    return details;
+  }
+  value(value) {
+    const container = this.element('div');
+    const text = JSON.stringify(value, null, 2);
+    const pre = this.element('pre', 'demo-structure-value', text.slice(0, 32768)); pre.tabIndex = 0; container.append(pre);
+    if (text.length > 32768) container.append(this.element('p', 'demo-structure-warning', this.t.structureDisplayLimit));
+    return container;
+  }
+}
+
 export class BrowserConverter {
   constructor(base, onProgress, workerFactory = url => new Worker(url, {type: 'module'}), identifierFactory = () => crypto.randomUUID()) {
     this.base = base;
@@ -296,7 +514,7 @@ export class BrowserConverter {
   cancel() {
     this.reject?.(Object.assign(new Error('Cancelled'), {code: 'cancelled'}));
   }
-  convert(filename, bytes) {
+  convert(filename, bytes, onInspection = () => {}) {
     this.cancel();
     return new Promise((resolve, reject) => {
       let worker = null, timer = null, settled = false;
@@ -315,6 +533,10 @@ export class BrowserConverter {
         worker.onmessage = ({data}) => {
           if (settled || !data || data.id !== id) return;
           if (data.type === 'progress') this.onProgress(data.stage);
+          else if (data.type === 'inspection' || data.type === 'inspection-error') {
+            try { onInspection(data.type === 'inspection' ? data.inspection : null, data.error?.code); }
+            catch { finish(Object.assign(new Error('Invalid inspection result'), {code: 'engineError'})); }
+          }
           else if (data.type === 'error') finish(Object.assign(new Error('Conversion failed'), {code: data.error?.code || 'conversionError'}));
           else if (data.type === 'result') finish(null, data);
         };
@@ -367,7 +589,13 @@ class DemoApplication {
     this.input.type = 'file'; this.input.accept = 'application/pdf,.pdf'; this.input.setAttribute('aria-label', this.t.choose);
     this.input.addEventListener('change', () => { const file = this.input.files[0]; if (file) this.importFile(file); });
     this.choose = this.button(this.t.choose, 'demo-primary', () => this.input.click());
-    this.cancelButton = this.button(this.t.cancel, '', () => { this.stop(); this.status(this.t.cancelled); });
+    this.cancelButton = this.button(this.t.cancel, '', () => {
+      this.stop();
+      if (this.artifact?.conversionPending) {
+        this.artifact.conversionPending = false; this.artifact.inspectionPending = false; this.artifact.conversionError = this.t.cancelled; this.renderArtifact();
+      }
+      this.status(this.t.cancelled);
+    });
     this.cancelButton.hidden = true;
     this.clearButton = this.button(this.t.clear, '', () => this.clear()); this.clearButton.hidden = true;
     this.statusNode = this.element('div', 'demo-status');
@@ -439,18 +667,21 @@ class DemoApplication {
       const read = record => new DemoAsset(this.galleryBase, record).read(signal);
       const files = sample.files;
       const pages = sample.pages?.length ? sample.pages : [files.preview];
-      const [html, pdf, diagnostics, code, previews, assets] = await Promise.all([
+      const [html, pdf, diagnostics, code, previews, assets, inspectionBytes] = await Promise.all([
         read(files.html), read(files.pdf), read(files.diagnostics), read(files.code),
         Promise.all(pages.map(async record => ({bytes: await read(record), mediaType: record.mediaType || 'image/png'}))),
         Promise.all((files.assets || []).map(async record => ({filename: record.filename || record.path.split('/').pop(), mediaType: record.mediaType, bytes: await read(record)}))),
+        read(files.inspection),
       ]);
       if (this.generation !== generation) return;
       let messages = JSON.parse(new TextDecoder().decode(diagnostics));
       if (!Array.isArray(messages)) messages = messages.diagnostics || [];
-      this.artifact = {sample, title: sample.title[this.language], description: sample.description[this.language],
+      const inspection = new PdfInspection(JSON.parse(new TextDecoder().decode(inspectionBytes)));
+      if (inspection.wrapper.source.sha256 !== files.pdf.sha256 || inspection.wrapper.source.bytes !== pdf.length) throw new Error('PDF inspection source mismatch');
+      this.artifact = {sample, title: sample.title[this.language], description: sample.description[this.language], inspection,
         html: new TextDecoder().decode(html), pdf, filename: sample.id + '.pdf', diagnostics: messages, assets,
         previews, code: new TextDecoder().decode(code), trustedReset: sample.profile === 'reset',
-        version: this.manifest.htmlPackage?.version || this.manifest.runtime?.pdfToHtmlVersion || '0.8.1'};
+        version: this.manifest.htmlPackage?.version || this.manifest.runtime?.pdfToHtmlVersion || '0.8.2'};
       this.samples.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.sample === sample.id)));
       this.selectedTab = 'compare'; this.renderArtifact(); this.status(this.t.idle);
       if (updateUrl) { const url = new URL(location.href); url.searchParams.set('sample', sample.id); history.replaceState(null, '', url); this.showResult(); }
@@ -469,7 +700,22 @@ class DemoApplication {
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (generation !== this.generation) return;
       if (!new TextDecoder().decode(bytes.slice(0, 1024)).includes('%PDF-')) throw Object.assign(new Error('Not PDF'), {code: 'notPdf'});
-      const response = await this.converter.convert(file.name, bytes);
+      const sourceHash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join('');
+      if (generation !== this.generation) return;
+      this.artifact = {title: file.name, description: this.t.inputDescription, html: null, assets: [], diagnostics: [],
+        filename: file.name, pdf: bytes, previews: [], trustedReset: false, version: '0.8.2', inspection: null, inspectionPending: true, conversionPending: true};
+      this.selectedTab = 'structure'; this.tabSelectedByUser = false; this.renderArtifact();
+      const response = await this.converter.convert(file.name, bytes, (wrapper, errorCode) => {
+        if (generation !== this.generation) return;
+        try {
+          const inspection = wrapper === null ? null : new PdfInspection(wrapper);
+          if (inspection && (inspection.wrapper.source.sha256 !== sourceHash || inspection.wrapper.source.bytes !== bytes.length)) throw new Error('PDF inspection source mismatch');
+          this.artifact.inspection = inspection; this.artifact.structureView = null;
+          this.artifact.inspectionError = inspection ? null : errorCode || 'inspection_failed';
+        } catch { this.artifact.inspectionError = 'inspection_failed'; }
+        this.artifact.inspectionPending = false;
+        this.renderArtifact();
+      });
       if (generation !== this.generation) return;
       const result = response.result;
       if (typeof result.html !== 'string' || !Array.isArray(result.assets) || !Array.isArray(result.diagnostics)) throw new Error('Invalid conversion result');
@@ -477,42 +723,49 @@ class DemoApplication {
         if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(asset.filename) || asset.filename.includes('..')) throw new Error('Invalid asset filename');
         return {filename: asset.filename, mediaType: asset.mediaType, bytes: Uint8Array.from(atob(asset.base64), c => c.charCodeAt(0))};
       });
-      this.artifact = {title: file.name, description: this.t.inputDescription, html: result.html, assets, diagnostics: result.diagnostics,
-        filename: file.name, pdf: bytes, previews: [], trustedReset: false, version: '0.8.1', durationMs: response.meta?.durationMs};
-      this.selectedTab = 'html'; this.renderArtifact(); this.status(this.t.complete); this.showResult();
+      Object.assign(this.artifact, {html: result.html, assets, diagnostics: result.diagnostics, durationMs: response.meta?.durationMs, conversionPending: false, inspectionPending: false});
+      if (!this.tabSelectedByUser) this.selectedTab = 'html';
+      this.renderArtifact(); this.status(this.t.complete); if (!this.tabSelectedByUser) this.showResult();
     } catch (error) {
       if (generation !== this.generation || error.code === 'cancelled') return;
       const code = ({untagged_pdf: 'untagged', encrypted_pdf: 'encrypted', resource_limit: 'unavailable', unsupported_pdf: 'unavailable', runtime_unavailable: 'engineError', file_size: 'tooLarge', invalid_pdf: 'notPdf'})[error.code] || error.code;
-      this.status(this.t[code] || this.t.conversionError, false, true);
+      const reason = this.t[code] || this.t.conversionError;
+      if (this.artifact) {
+        Object.assign(this.artifact, {conversionPending: false, inspectionPending: false, conversionError: reason});
+        this.renderArtifact(); if (!this.tabSelectedByUser) this.showResult();
+      }
+      this.status((this.artifact?.inspection ? this.t.partialComplete + ' ' : '') + reason, false, true);
     }
   }
   blob(bytes, type) { const url = URL.createObjectURL(new Blob([bytes], {type})); this.urls.push(url); return url; }
   renderArtifact() {
+    const focused = this.artifact.structureView?.contains(document.activeElement) ? document.activeElement : null;
     this.releasePreview(); const artifact = this.artifact; this.workspace.replaceChildren();
     const header = this.element('div', 'demo-workspace-header'); const heading = this.element('div');
     this.resultHeading = this.element('h3', '', artifact.title); this.resultHeading.tabIndex = -1;
     this.resultJump.disabled = false;
     heading.append(this.resultHeading, this.element('p', '', artifact.description));
     const actions = this.element('div', 'demo-actions');
-    actions.append(this.button(this.t.downloadPdf, 'demo-primary', () => this.download(artifact.pdf, 'application/pdf', artifact.filename)),
-      this.button(this.t.downloadHtml, '', event => this.downloadBundle(event.currentTarget)),
+    const htmlDownload = this.button(this.t.downloadHtml, '', event => this.downloadBundle(event.currentTarget));
+    htmlDownload.disabled = typeof artifact.html !== 'string';
+    actions.append(this.button(this.t.downloadPdf, 'demo-primary', () => this.download(artifact.pdf, 'application/pdf', artifact.filename)), htmlDownload,
       this.button(this.t.backExamples, '', () => { this.sampleHeading.focus({preventScroll: true}); this.sampleHeading.scrollIntoView({block: 'start', behavior: 'instant'}); }));
     header.append(heading, actions);
     const tabs = this.element('div', 'demo-tabs'); tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', this.t.result);
-    const names = ['compare', 'html', 'pdf', 'code', 'diagnostics'];
+    const names = ['compare', 'html', 'pdf', 'structure', 'code', 'diagnostics'];
     names.forEach((name, index) => {
       const label = this.t[name] + (name === 'diagnostics' ? ' (' + artifact.diagnostics.length + ')' : '');
       const button = this.element('button', 'demo-tab', label); button.type = 'button'; button.id = 'demo-tab-' + name;
       button.setAttribute('role', 'tab'); button.setAttribute('aria-controls', 'demo-panel');
       button.setAttribute('aria-selected', String(this.selectedTab === name)); button.tabIndex = this.selectedTab === name ? 0 : -1;
-      button.addEventListener('click', () => this.selectTab(name));
+      button.addEventListener('click', () => { this.tabSelectedByUser = true; this.selectTab(name); });
       button.addEventListener('keydown', event => {
         let next = null;
         if (event.key === 'ArrowRight') next = (index + 1) % names.length;
         if (event.key === 'ArrowLeft') next = (index + names.length - 1) % names.length;
         if (event.key === 'Home') next = 0;
         if (event.key === 'End') next = names.length - 1;
-        if (next !== null) { event.preventDefault(); this.selectTab(names[next]); tabs.children[next].focus(); }
+        if (next !== null) { event.preventDefault(); this.tabSelectedByUser = true; this.selectTab(names[next]); tabs.children[next].focus(); }
       });
       tabs.append(button);
     });
@@ -532,6 +785,7 @@ class DemoApplication {
       notes.append(list); this.workspace.append(notes);
     }
     this.selectTab(this.selectedTab);
+    if (focused?.isConnected) focused.focus({preventScroll: true});
   }
   size(bytes) { return new Intl.NumberFormat(this.language, {maximumFractionDigits: 1}).format(bytes / 1024) + (this.language === 'fr' ? ' Kio' : ' KiB'); }
   selectTab(name) {
@@ -541,7 +795,16 @@ class DemoApplication {
     if (name === 'compare') { const panes = this.element('div', 'demo-compare'); panes.append(this.pdfPane(), this.htmlPane()); this.panels.append(panes); }
     if (name === 'html') this.panels.append(this.htmlPane());
     if (name === 'pdf') this.panels.append(this.pdfPane());
-    if (name === 'code') this.panels.append(new HtmlSourceView(this.artifact.html, this.t).render());
+    if (name === 'code') this.panels.append(typeof this.artifact.html === 'string' ? new HtmlSourceView(this.artifact.html, this.t).render() : this.htmlPane());
+    if (name === 'structure') {
+      if (this.artifact.inspection) {
+        const artifact = this.artifact;
+        artifact.structureView ??= new PdfStructureView(artifact.inspection, this.t,
+          json => this.download(json, 'application/json', artifact.filename.replace(/\.pdf$/i, '') + '-inspection.json')).render();
+        this.panels.append(artifact.structureView);
+      }
+      else this.panels.append(this.element('p', 'demo-inspection', this.artifact.inspectionPending ? this.t.structurePending : this.t.structureMissing));
+    }
     if (name === 'diagnostics') this.diagnosticsPane();
   }
   pdfPane() {
@@ -561,6 +824,10 @@ class DemoApplication {
   htmlPane() {
     const pane = this.element('div', 'demo-pane'); const label = this.element('div', 'demo-pane-label');
     label.append(document.createTextNode(this.t.result), this.element('span', '', this.t.semantic)); pane.append(label);
+    if (typeof this.artifact.html !== 'string') {
+      pane.append(this.element('p', 'demo-inspection', this.artifact.conversionPending ? this.t.htmlPending : this.t.htmlUnavailable + ' ' + (this.artifact.conversionError || '')));
+      return pane;
+    }
     const frame = this.element('iframe', 'demo-result-frame'); frame.title = this.t.result;
     frame.setAttribute('sandbox', this.artifact.trustedReset ? 'allow-scripts' : ''); frame.referrerPolicy = 'no-referrer';
     try { frame.srcdoc = new PreviewDocument(this.artifact, this.urls).build(); pane.append(frame); }
@@ -572,6 +839,7 @@ class DemoApplication {
   }
   diagnosticsPane() {
     const section = this.element('div', 'demo-inspection'); section.append(this.element('h4', '', this.t.diagnostics));
+    if (this.artifact.conversionError) section.append(this.element('p', 'demo-structure-warning', this.artifact.conversionError));
     section.append(this.element('p', '', this.artifact.diagnostics.length ? this.t.diagnosticHelp : this.t.noDiagnostics));
     const messages = this.element('ul', 'demo-diagnostics');
     for (const diagnostic of this.artifact.diagnostics) {
@@ -599,7 +867,7 @@ class DemoApplication {
   }
   async downloadBundle(button) {
     const artifact = this.artifact, generation = this.generation;
-    if (!artifact) return;
+    if (!artifact || typeof artifact.html !== 'string') return;
     button.disabled = true;
     try {
       const {zipSync} = await import('./assets/fflate.js'); const encoder = new TextEncoder(); const files = Object.create(null);
