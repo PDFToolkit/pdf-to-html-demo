@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+## 0.4.1 — 2026-11-02
+
+- Use the canonical Composer package `pdftoolkit/pdf:^0.12.3` and migrated stable dependencies. Keep existing PHP namespaces, APIs and behavior.
+- Document migration of application requirements in English and French; preserve previous releases and their evidence.
+- Rebuild the runtime with Reader 0.8.1 and HTML 0.8.3, their exact published revisions and canonical-core provenance.
+
+
 ## 0.4.0 — 2026-11-02
 
 - Add an independent, read-only PDF structure tab with source tag trees, typed properties, pages/object generations, namespaces, role mappings and associated-file metadata. Navigate referenced objects and download the exact bounded JSON snapshot with original PDF identity.

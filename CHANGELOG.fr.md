@@ -4,6 +4,13 @@
 
 ## Non publié
 
+## 0.4.1 — 2026-11-02
+
+- Utiliser le nom Composer canonique `pdftoolkit/pdf:^0.12.3` et les dépendances stables migrées. Conserver les namespaces PHP, API et comportements existants.
+- Documenter la migration des exigences applicatives en français et en anglais ; conserver les anciennes versions et leurs preuves.
+- Reconstruire le runtime avec Reader 0.8.1 et HTML 0.8.3, leurs révisions publiées exactes et la provenance du core canonique.
+
+
 ## 0.4.0 — 2026-11-02
 
 - Ajouter un onglet Structure PDF indépendant en lecture seule : balises source, propriétés typées, pages/générations d’objets, namespaces, correspondances de rôles et métadonnées des fichiers associés. Naviguer entre objets et télécharger la vue JSON bornée avec l’identité du PDF original.

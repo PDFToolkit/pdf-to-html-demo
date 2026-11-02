@@ -3,7 +3,7 @@
 [English](examples.md) · [Français](examples.fr.md)
 
 La galerie part de véritables octets PDF et les convertit avec la version publiée
-**0.8.2** de `pdftoolkit/pdf-to-html`, révision
+**0.8.3** de `pdftoolkit/pdf-to-html`, révision
 `89c1328ece98a131866810d3f0e21c752fbf5c09`. Son HTML est la sortie exacte du
 convertisseur. L’application ne fabrique pas du HTML pour simuler une conversion.
 
@@ -147,7 +147,7 @@ réelle de Poppler.
 ```sh
 composer install --no-dev --prefer-dist --no-interaction
 php bin/build-gallery.php --output dist/gallery \
-  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.4.0
+  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.4.1
 ```
 
 `--html-source` désigne le checkout publié du module HTML contenant
@@ -217,7 +217,7 @@ bilingues, son `profile`, ses `capabilities`, sa provenance, ses caractéristiqu
 Chaque fichier comporte `path`, `bytes`, `sha256` et `mediaType`. Le tableau racine
 `assets` inventorie tous les fichiers livrés sauf le manifeste lui-même, y
 compris le code auxiliaire. `source.kind` vaut `generated` (commit de cette démo)
-ou `published-fixture` (chemin exact du cas HTML 0.8.2). Ce builder ne produit aucun
+ou `published-fixture` (chemin exact du cas HTML 0.8.3). Ce builder ne produit aucun
 document `.html` directement navigable. L’application vérifie et isole les
 aperçus séparément ; un nom de fichier ou une empreinte ne constitue pas à lui
 seul une autorisation d’exécuter un script.
