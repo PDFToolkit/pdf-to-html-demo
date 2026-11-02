@@ -4,8 +4,88 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "649a3be06a28d968086aa5bc5e58690e",
+    "content-hash": "7c506bd3c092a6d510a44590685f3ac4",
     "packages": [
+        {
+            "name": "pdftoolkit/pdf",
+            "version": "v0.12.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/PDFToolkit/pdf.git",
+                "reference": "cdb3cb1798177944adb4d1e6fd92e0ff2dfc6f06"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/PDFToolkit/pdf/zipball/cdb3cb1798177944adb4d1e6fd92e0ff2dfc6f06",
+                "reference": "cdb3cb1798177944adb4d1e6fd92e0ff2dfc6f06",
+                "shasum": ""
+            },
+            "require": {
+                "ext-ctype": "*",
+                "ext-iconv": "*",
+                "ext-zlib": "*",
+                "php": "^8.3",
+                "php-64bit": "*"
+            },
+            "replace": {
+                "roukmoute/pdf": "self.version"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.0",
+                "pdftoolkit/pdf-codecs": "^0.1",
+                "pdftoolkit/pdf-fonts": "^0.2.1",
+                "pdftoolkit/pdf-images": "^0.2.2",
+                "pdftoolkit/pdf-reader": "^0.8.1",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^12.0"
+            },
+            "suggest": {
+                "ext-dom": "Required only for the explicitly selected WtPdfXmlRichTextParser backend.",
+                "ext-openssl": "Required only for explicitly selected AES and CMS encryption or signature backends."
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.12.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PDF\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mathias STRASSER",
+                    "email": "contact@roukmoute.fr"
+                }
+            ],
+            "description": "Explicit PDF 1.7/2.0 objects and writing with executable specification rules, conservative redaction, signatures, encryption and tagged-structure validation",
+            "homepage": "https://pdftoolkit.github.io/modules/core/",
+            "keywords": [
+                "AES-GCM",
+                "iso-32000-1",
+                "iso-32000-2",
+                "object-model",
+                "pdf",
+                "pdf-1.7",
+                "pdf-2.0",
+                "pdf-mac",
+                "php",
+                "tagged-pdf",
+                "xmp"
+            ],
+            "support": {
+                "docs": "https://pdftoolkit.github.io/modules/core/",
+                "issues": "https://github.com/PDFToolkit/pdf/issues",
+                "source": "https://github.com/PDFToolkit/pdf"
+            },
+            "time": "2026-11-02T20:24:02+00:00"
+        },
         {
             "name": "pdftoolkit/pdf-codecs",
             "version": "v0.1.0",
@@ -61,23 +141,23 @@
         },
         {
             "name": "pdftoolkit/pdf-reader",
-            "version": "v0.8.0",
+            "version": "v0.8.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PDFToolkit/pdf-reader.git",
-                "reference": "007ed70a2e77d62df8d7f8775382af594070714e"
+                "reference": "41bfcae6bc4bea76fe6a94486a0bb59c82d61e79"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PDFToolkit/pdf-reader/zipball/007ed70a2e77d62df8d7f8775382af594070714e",
-                "reference": "007ed70a2e77d62df8d7f8775382af594070714e",
+                "url": "https://api.github.com/repos/PDFToolkit/pdf-reader/zipball/41bfcae6bc4bea76fe6a94486a0bb59c82d61e79",
+                "reference": "41bfcae6bc4bea76fe6a94486a0bb59c82d61e79",
                 "shasum": ""
             },
             "require": {
                 "ext-ctype": "*",
                 "ext-zlib": "*",
-                "php": "^8.3",
-                "roukmoute/pdf": "^0.11 || ^0.12"
+                "pdftoolkit/pdf": "^0.12.2",
+                "php": "^8.3"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.0",
@@ -126,29 +206,29 @@
                 "issues": "https://github.com/PDFToolkit/pdf-reader/issues",
                 "source": "https://github.com/PDFToolkit/pdf-reader"
             },
-            "time": "2026-11-02T15:56:43+00:00"
+            "time": "2026-11-02T20:16:22+00:00"
         },
         {
             "name": "pdftoolkit/pdf-to-html",
-            "version": "v0.8.2",
+            "version": "v0.8.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PDFToolkit/pdf-to-html.git",
-                "reference": "89c1328ece98a131866810d3f0e21c752fbf5c09"
+                "reference": "9da8bf2e80a52cafd87543a3d27345e75804e01b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PDFToolkit/pdf-to-html/zipball/89c1328ece98a131866810d3f0e21c752fbf5c09",
-                "reference": "89c1328ece98a131866810d3f0e21c752fbf5c09",
+                "url": "https://api.github.com/repos/PDFToolkit/pdf-to-html/zipball/9da8bf2e80a52cafd87543a3d27345e75804e01b",
+                "reference": "9da8bf2e80a52cafd87543a3d27345e75804e01b",
                 "shasum": ""
             },
             "require": {
                 "ext-dom": "*",
                 "ext-mbstring": "*",
-                "pdftoolkit/pdf-reader": "^0.7 || ^0.8",
+                "pdftoolkit/pdf": "^0.12.2",
+                "pdftoolkit/pdf-reader": "^0.8.1",
                 "php": "^8.3",
-                "php-64bit": "*",
-                "roukmoute/pdf": "^0.11 || ^0.12"
+                "php-64bit": "*"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.0",
@@ -195,84 +275,7 @@
                 "issues": "https://github.com/PDFToolkit/pdf-to-html/issues",
                 "source": "https://github.com/PDFToolkit/pdf-to-html"
             },
-            "time": "2026-11-02T16:03:30+00:00"
-        },
-        {
-            "name": "roukmoute/pdf",
-            "version": "v0.12.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/PDFToolkit/pdf.git",
-                "reference": "ea9ae2c134bbaf5fc3a22dbc7c81ff8e7b29a6cc"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/PDFToolkit/pdf/zipball/ea9ae2c134bbaf5fc3a22dbc7c81ff8e7b29a6cc",
-                "reference": "ea9ae2c134bbaf5fc3a22dbc7c81ff8e7b29a6cc",
-                "shasum": ""
-            },
-            "require": {
-                "ext-ctype": "*",
-                "ext-iconv": "*",
-                "ext-zlib": "*",
-                "php": "^8.3",
-                "php-64bit": "*"
-            },
-            "require-dev": {
-                "friendsofphp/php-cs-fixer": "^3.0",
-                "pdftoolkit/pdf-codecs": "^0.1",
-                "pdftoolkit/pdf-fonts": "^0.2",
-                "pdftoolkit/pdf-images": "^0.2",
-                "pdftoolkit/pdf-reader": "^0.7",
-                "phpstan/phpstan": "^2.1",
-                "phpunit/phpunit": "^12.0"
-            },
-            "suggest": {
-                "ext-dom": "Required only for the explicitly selected WtPdfXmlRichTextParser backend.",
-                "ext-openssl": "Required only for explicitly selected AES and CMS encryption or signature backends."
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.12.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "PDF\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Mathias STRASSER",
-                    "email": "contact@roukmoute.fr"
-                }
-            ],
-            "description": "Explicit PDF 1.7/2.0 objects and writing with executable specification rules, conservative redaction, signatures, encryption and tagged-structure validation",
-            "homepage": "https://pdftoolkit.github.io/modules/core/",
-            "keywords": [
-                "AES-GCM",
-                "iso-32000-1",
-                "iso-32000-2",
-                "object-model",
-                "pdf",
-                "pdf-1.7",
-                "pdf-2.0",
-                "pdf-mac",
-                "php",
-                "tagged-pdf",
-                "xmp"
-            ],
-            "support": {
-                "docs": "https://pdftoolkit.github.io/modules/core/",
-                "issues": "https://github.com/PDFToolkit/pdf/issues",
-                "source": "https://github.com/PDFToolkit/pdf"
-            },
-            "time": "2026-10-28T20:40:33+00:00"
+            "time": "2026-11-02T20:24:02+00:00"
         }
     ],
     "packages-dev": [],

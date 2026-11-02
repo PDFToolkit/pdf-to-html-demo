@@ -15,9 +15,9 @@ await fs.mkdir(assets, { recursive: true });
 const lock = JSON.parse(await fs.readFile(path.join(root, 'composer.lock'), 'utf8'));
 const expectedReferences = {
     'pdftoolkit/pdf-codecs': '1f82ae19d6dd874c574a5601d37f3ac63e0d4170',
-    'pdftoolkit/pdf-to-html': '89c1328ece98a131866810d3f0e21c752fbf5c09',
-    'pdftoolkit/pdf-reader': '007ed70a2e77d62df8d7f8775382af594070714e',
-    'roukmoute/pdf': 'ea9ae2c134bbaf5fc3a22dbc7c81ff8e7b29a6cc',
+    'pdftoolkit/pdf-to-html': '9da8bf2e80a52cafd87543a3d27345e75804e01b',
+    'pdftoolkit/pdf-reader': '41bfcae6bc4bea76fe6a94486a0bb59c82d61e79',
+    'pdftoolkit/pdf': 'cdb3cb1798177944adb4d1e6fd92e0ff2dfc6f06',
 };
 const installed = JSON.parse(await fs.readFile(path.join(root, 'vendor/composer/installed.json'), 'utf8'));
 if (installed.dev || installed.packages.length !== 4 || lock.packages.length !== 4 || lock['packages-dev'].length) {

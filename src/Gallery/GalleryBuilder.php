@@ -12,8 +12,8 @@ use PDFToolkit\Demo\Inspection\Inspector;
 /** Filesystem operations belong to this reproducible build application. */
 final readonly class GalleryBuilder
 {
-    public const READER_REVISION = '007ed70a2e77d62df8d7f8775382af594070714e';
-    public const HTML_REVISION = '89c1328ece98a131866810d3f0e21c752fbf5c09';
+    public const READER_REVISION = '41bfcae6bc4bea76fe6a94486a0bb59c82d61e79';
+    public const HTML_REVISION = '9da8bf2e80a52cafd87543a3d27345e75804e01b';
     private const SIGNATURE_SHA = '8b55dfe5e157d024d88703c4cd761f0bb77dfd94178536d5f6f06ea09f1bd10e';
     private const CERTIFICATE_SHA = '61ecaec8b4fc69746718148aedaec21ee853c583a8e5e05967dd494dc54ed1d6';
 
@@ -22,13 +22,13 @@ final readonly class GalleryBuilder
     }
 
     /** @return array<string,mixed> */
-    public function build(string $output, ?string $revision, string $version = '0.4.0', ?string $htmlSource = null, bool $draft = false): array
+    public function build(string $output, ?string $revision, string $version = '0.4.1', ?string $htmlSource = null, bool $draft = false): array
     {
-        if (InstalledVersions::getReference('pdftoolkit/pdf-to-html') !== self::HTML_REVISION || ltrim(InstalledVersions::getPrettyVersion('pdftoolkit/pdf-to-html') ?? '', 'v') !== '0.8.2') {
-            throw new \RuntimeException('Build the gallery with the exact released HTML 0.8.2 dependency.');
+        if (InstalledVersions::getReference('pdftoolkit/pdf-to-html') !== self::HTML_REVISION || ltrim(InstalledVersions::getPrettyVersion('pdftoolkit/pdf-to-html') ?? '', 'v') !== '0.8.3') {
+            throw new \RuntimeException('Build the gallery with the exact released HTML 0.8.3 dependency.');
         }
-        if (InstalledVersions::getReference('pdftoolkit/pdf-reader') !== self::READER_REVISION || ltrim(InstalledVersions::getPrettyVersion('pdftoolkit/pdf-reader') ?? '', 'v') !== '0.8.0') {
-            throw new \RuntimeException('Build the inspection gallery with the exact released Reader 0.8.0 dependency.');
+        if (InstalledVersions::getReference('pdftoolkit/pdf-reader') !== self::READER_REVISION || ltrim(InstalledVersions::getPrettyVersion('pdftoolkit/pdf-reader') ?? '', 'v') !== '0.8.1') {
+            throw new \RuntimeException('Build the inspection gallery with the exact released Reader 0.8.1 dependency.');
         }
         if (preg_match('/^\d+\.\d+\.\d+$/D', $version) !== 1) {
             throw new \InvalidArgumentException('The gallery version must be an explicit stable version.');
@@ -87,7 +87,7 @@ final readonly class GalleryBuilder
                 }
                 $source = $case->fixturePath === null
                     ? ['kind' => 'generated', ...$generator, 'path' => $case->image === null ? 'src/Gallery/CaseFactory.php' : 'src/Gallery/ImageCaseFactory.php']
-                    : ['kind' => 'published-fixture', 'package' => 'pdftoolkit/pdf-to-html', 'version' => '0.8.2', 'commit' => self::HTML_REVISION, 'path' => $case->fixturePath];
+                    : ['kind' => 'published-fixture', 'package' => 'pdftoolkit/pdf-to-html', 'version' => '0.8.3', 'commit' => self::HTML_REVISION, 'path' => $case->fixturePath];
                 $items[] = ['id' => $case->id, 'title' => $case->title, 'description' => $case->description, 'observations' => $case->observations, 'profile' => $case->profile, 'capabilities' => $case->capabilities, 'source' => $source, 'files' => $files, 'pages' => [[...$png, 'width' => $preview['width'], 'height' => $preview['height']]], 'expected' => $case->expected];
             }
             // The per-case source excerpt is the actual factory. Include its full object/build context once.
@@ -108,7 +108,7 @@ final readonly class GalleryBuilder
                 $this->write($stage, 'source/' . $relative . '.txt', $this->read($path), 'text/plain', $inventory);
             }
             usort($inventory, static fn (array $a, array $b): int => $a['path'] <=> $b['path']);
-            $manifest = ['schemaVersion' => 1, 'draft' => $draft, 'generator' => $generator, 'htmlPackage' => ['version' => '0.8.2', 'revision' => self::HTML_REVISION], 'readerPackage' => ['version' => '0.8.0', 'revision' => self::READER_REVISION], 'rendering' => ['engine' => 'Poppler pdftoppm', 'version' => $this->rasterizer->version(), 'maximumDimension' => 1600], 'cases' => $items, 'assets' => $inventory];
+            $manifest = ['schemaVersion' => 1, 'draft' => $draft, 'generator' => $generator, 'htmlPackage' => ['version' => '0.8.3', 'revision' => self::HTML_REVISION], 'readerPackage' => ['version' => '0.8.1', 'revision' => self::READER_REVISION], 'rendering' => ['engine' => 'Poppler pdftoppm', 'version' => $this->rasterizer->version(), 'maximumDimension' => 1600], 'cases' => $items, 'assets' => $inventory];
             if (file_put_contents($stage . '/gallery-manifest.json', $this->json($manifest)) === false) {
                 throw new \RuntimeException('Cannot write the gallery manifest.');
             }
@@ -129,12 +129,12 @@ final readonly class GalleryBuilder
         }
         $root = realpath($source);
         if ($root === false) {
-            throw new \InvalidArgumentException('--html-source must identify the checked-out HTML 0.8.2 source.');
+            throw new \InvalidArgumentException('--html-source must identify the checked-out HTML 0.8.3 source.');
         }
         $pdf = $this->read($root . '/tests/Fixtures/signatures/signed-padded.pdf');
         $certificate = $this->read($root . '/tests/Fixtures/signatures/signer.der');
         if (!hash_equals(self::SIGNATURE_SHA, hash('sha256', $pdf)) || !hash_equals(self::CERTIFICATE_SHA, hash('sha256', $certificate))) {
-            throw new \RuntimeException('The signature PDF and public certificate must match the published 0.8.2 fixture.');
+            throw new \RuntimeException('The signature PDF and public certificate must match the published 0.8.3 fixture.');
         }
         return [$pdf, $certificate];
     }

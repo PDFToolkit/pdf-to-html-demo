@@ -681,7 +681,7 @@ class DemoApplication {
       this.artifact = {sample, title: sample.title[this.language], description: sample.description[this.language], inspection,
         html: new TextDecoder().decode(html), pdf, filename: sample.id + '.pdf', diagnostics: messages, assets,
         previews, code: new TextDecoder().decode(code), trustedReset: sample.profile === 'reset',
-        version: this.manifest.htmlPackage?.version || this.manifest.runtime?.pdfToHtmlVersion || '0.8.2'};
+        version: this.manifest.htmlPackage?.version || this.manifest.runtime?.pdfToHtmlVersion || '0.8.3'};
       this.samples.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.sample === sample.id)));
       this.selectedTab = 'compare'; this.renderArtifact(); this.status(this.t.idle);
       if (updateUrl) { const url = new URL(location.href); url.searchParams.set('sample', sample.id); history.replaceState(null, '', url); this.showResult(); }
@@ -703,7 +703,7 @@ class DemoApplication {
       const sourceHash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join('');
       if (generation !== this.generation) return;
       this.artifact = {title: file.name, description: this.t.inputDescription, html: null, assets: [], diagnostics: [],
-        filename: file.name, pdf: bytes, previews: [], trustedReset: false, version: '0.8.2', inspection: null, inspectionPending: true, conversionPending: true};
+        filename: file.name, pdf: bytes, previews: [], trustedReset: false, version: '0.8.3', inspection: null, inspectionPending: true, conversionPending: true};
       this.selectedTab = 'structure'; this.tabSelectedByUser = false; this.renderArtifact();
       const response = await this.converter.convert(file.name, bytes, (wrapper, errorCode) => {
         if (generation !== this.generation) return;
