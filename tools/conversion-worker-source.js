@@ -1,5 +1,5 @@
 import { PHP, loadPHPRuntime } from '@php-wasm/universal';
-import { jspi } from 'wasm-feature-detect';
+import { RuntimeCapabilities, RuntimeCapabilityFailure } from './runtime-capabilities.js';
 
 class WorkerFailure extends Error {
     constructor(code) {
@@ -12,7 +12,8 @@ class WorkerFailure extends Error {
 class ConversionWorker {
     #started = false;
     #id = '';
-    #stage = 'loading-runtime';
+    #stage = 'checking-runtime';
+    #variant = null;
 
     async accept(message) {
         if (this.#started) return;
@@ -32,10 +33,15 @@ class ConversionWorker {
                 this.#fail('invalid_request', 'Supply a PDF filename without path separators or control characters.');
                 return;
             }
+            this.#progress('checking-runtime');
+            this.#variant = await new RuntimeCapabilities().selectVariant();
+            if (typeof globalThis.crypto?.subtle?.digest !== 'function' || typeof globalThis.DecompressionStream !== 'function') {
+                throw new WorkerFailure('runtime_capability');
+            }
             this.#progress('loading-runtime');
             const manifestResponse = await this.#fetch(new URL('./runtime-manifest.json', import.meta.url));
             const manifest = await manifestResponse.json();
-            const variant = await jspi() ? 'jspi' : 'asyncify';
+            const variant = this.#variant;
             const runtime = manifest.runtimes[variant];
             const loaderBytes = await this.#download(runtime.loader, manifest.files[runtime.loader]);
             // A blob module has no relative URL base. Preserve the verified loader's
@@ -50,7 +56,7 @@ class ConversionWorker {
                 URL.revokeObjectURL(moduleUrl);
             }
             const wasmBinary = await this.#download(runtime.wasm, manifest.files[runtime.wasm]);
-            this.#stage = 'initializing-runtime';
+            this.#progress('initializing-runtime');
             const php = new PHP(await loadPHPRuntime(loader, { wasmBinary }));
             const runtimeProbe = await php.run({ code: "<?php echo json_encode(['phpVersion'=>PHP_VERSION,'phpIntSize'=>PHP_INT_SIZE,'extensions'=>get_loaded_extensions()]);" });
             if (runtimeProbe.exitCode !== 0) throw new Error('The PHP runtime could not start.');
@@ -63,7 +69,7 @@ class ConversionWorker {
             const application = await this.#download(manifest.application, manifest.files[manifest.application]);
             php.mkdir('/app');
             php.writeFile('/app/application.zip', application);
-            this.#stage = 'initializing-library';
+            this.#progress('initializing-library');
             const extracted = await php.run({ code: "<?php $zip = new ZipArchive(); if ($zip->open('/app/application.zip') !== true || !$zip->extractTo('/app')) throw new RuntimeException('Application archive could not be opened'); $zip->close(); unlink('/app/application.zip');" });
             if (extracted.exitCode !== 0) throw new Error('The converter could not be loaded.');
             php.mkdir('/job');
@@ -100,13 +106,14 @@ class ConversionWorker {
             });
         } catch (error) {
             const fallback = {
+                'checking-runtime': 'runtime_capability',
                 'loading-runtime': 'runtime_initialization',
                 'initializing-runtime': 'runtime_initialization',
                 'loading-library': 'library_initialization',
                 'initializing-library': 'library_initialization',
                 'converting': 'conversion_failed',
             };
-            this.#fail(error instanceof WorkerFailure ? error.code : fallback[this.#stage] ?? 'runtime_unavailable',
+            this.#fail(error instanceof WorkerFailure || error instanceof RuntimeCapabilityFailure ? error.code : fallback[this.#stage] ?? 'runtime_unavailable',
                 'The local converter could not complete this stage.');
         } finally {
             // The UI also terminates the worker on completion, cancellation, or its 30 s deadline.
@@ -150,11 +157,11 @@ class ConversionWorker {
 
     #progress(stage) {
         this.#stage = stage;
-        self.postMessage({ type: 'progress', id: this.#id, stage });
+        self.postMessage({ type: 'progress', id: this.#id, stage, variant: this.#variant });
     }
 
     #fail(code, message) {
-        self.postMessage({ type: 'error', id: this.#id, error: { code, message, stage: this.#stage } });
+        self.postMessage({ type: 'error', id: this.#id, error: { code, message, stage: this.#stage, variant: this.#variant } });
     }
 }
 

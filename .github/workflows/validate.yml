@@ -89,6 +89,8 @@ jobs:
       - run: composer audit --locked
       - run: npm ci --ignore-scripts
       - run: npm audit
+      - name: Verify runtime capability selection and policy failures
+        run: node tests/runtime-capabilities.mjs
       - name: Install independent PDF and HTML oracles
         run: |
           sudo apt-get update
