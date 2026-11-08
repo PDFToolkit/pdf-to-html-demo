@@ -19,6 +19,14 @@ const COPY = {
     runtime_download: 'A file needed by the local converter could not be downloaded. Reload the page and check your connection or content-blocking settings.',
     runtime_integrity: 'A downloaded converter file did not match the expected version. Reload the page to download it again; the file was not executed.',
     runtime_initialization: 'The browser could not initialize the local PHP engine. Check whether WebAssembly or Worker scripts are blocked, then reload the page.',
+    'checking-runtime': 'Checking browser capabilities…',
+    'initializing-runtime': 'Starting PHP in your browser…',
+    'initializing-library': 'Starting the local converter…',
+    wasm_unavailable: 'WebAssembly could not run in the conversion Worker. The examples remain available. The diagnostic below can help investigate your browser or site permissions.',
+    runtime_capability: 'A browser capability needed by the local converter is unavailable. Use HTTPS or localhost and consult the diagnostic below.',
+    startup_timeout: 'The local converter did not finish starting within 30 seconds. This includes downloading and preparing the engine; your PDF has not reached conversion. Reload the page to try again.',
+    startupDetails: 'Conversion engine diagnostic', startupHelp: 'You can share this report when asking for help. It contains only the application version, failure code, stage, engine variant and browser capability flags. No PDF data or filename is included. Nothing is sent automatically.',
+    startupReport: 'Diagnostic report', copyReport: 'Copy diagnostic', selectReport: 'Select and copy the report below.',
     library_initialization: 'The local PDF converter could not be prepared. Reload the page to try again.',
     conversionError: 'This PDF could not be converted with the demonstration profile.',
     compare: 'Compare', html: 'HTML result', pdf: 'Source PDF', code: 'HTML code', diagnostics: 'Diagnostics', structure: 'PDF structure',
@@ -75,6 +83,14 @@ const COPY = {
     runtime_download: 'Un fichier nécessaire au convertisseur local n’a pas pu être téléchargé. Rechargez la page et vérifiez votre connexion ou les paramètres de blocage de contenu.',
     runtime_integrity: 'Un fichier téléchargé du convertisseur ne correspond pas à la version attendue. Rechargez la page pour le télécharger à nouveau ; ce fichier n’a pas été exécuté.',
     runtime_initialization: 'Le navigateur n’a pas pu initialiser le moteur PHP local. Vérifiez si WebAssembly ou les scripts Worker sont bloqués, puis rechargez la page.',
+    'checking-runtime': 'Vérification des capacités du navigateur…',
+    'initializing-runtime': 'Démarrage de PHP dans le navigateur…',
+    'initializing-library': 'Démarrage du convertisseur local…',
+    wasm_unavailable: 'WebAssembly n’a pas pu s’exécuter dans le Worker de conversion. Les exemples restent disponibles. Le diagnostic ci-dessous peut aider à examiner le navigateur ou les autorisations du site.',
+    runtime_capability: 'Une capacité du navigateur nécessaire au convertisseur local est indisponible. Utilisez HTTPS ou localhost et consultez le diagnostic ci-dessous.',
+    startup_timeout: 'Le convertisseur local n’a pas terminé son démarrage en 30 secondes. Ce délai inclut le téléchargement et la préparation du moteur ; votre PDF n’a pas atteint la conversion. Rechargez la page pour réessayer.',
+    startupDetails: 'Diagnostic du moteur de conversion', startupHelp: 'Vous pouvez partager ce rapport pour demander de l’aide. Il contient uniquement la version de l’application, le code d’erreur, l’étape, la variante du moteur et les indicateurs de capacités du navigateur. Il ne contient ni données ni nom du PDF. Rien n’est envoyé automatiquement.',
+    startupReport: 'Rapport de diagnostic', copyReport: 'Copier le diagnostic', selectReport: 'Sélectionnez et copiez le rapport ci-dessous.',
     library_initialization: 'Le convertisseur PDF local n’a pas pu être préparé. Rechargez la page pour réessayer.',
     conversionError: 'Ce PDF n’a pas pu être converti avec le profil de démonstration.',
     compare: 'Comparer', html: 'Résultat HTML', pdf: 'PDF source', code: 'Code HTML', diagnostics: 'Diagnostics', structure: 'Structure PDF',
@@ -501,12 +517,43 @@ export class PdfStructureView {
   }
 }
 
+/** A closed report vocabulary: never serialize errors, URLs or document metadata. */
+export class StartupDiagnostic {
+  constructor(code, stage, variant, capabilities) {
+    this.schemaVersion = 1;
+    this.applicationVersion = '0.4.2';
+    this.code = ['engineError', 'runtime_download', 'runtime_integrity', 'runtime_initialization', 'library_initialization', 'runtime_unavailable', 'runtime_capability', 'wasm_unavailable', 'startup_timeout'].includes(code) ? code : 'engineError';
+    this.stage = ['preparing-input', 'worker-loading', 'checking-runtime', 'loading-runtime', 'initializing-runtime', 'loading-library', 'initializing-library', 'inspecting', 'converting'].includes(stage) ? stage : 'worker-loading';
+    this.runtimeVariant = ['jspi', 'asyncify'].includes(variant) ? variant : null;
+    this.capabilities = Object.freeze(Object.fromEntries(['secureContext', 'worker', 'webAssembly', 'crypto', 'decompressionStream'].map(name => [name, capabilities?.[name] === true])));
+    Object.freeze(this);
+  }
+}
+
+export class BrowserEnvironment {
+  constructor(scope = globalThis) { this.scope = scope; }
+  snapshot() {
+    const scope = this.scope;
+    return {
+      secureContext: scope.isSecureContext === true,
+      worker: typeof scope.Worker === 'function',
+      webAssembly: typeof scope.WebAssembly?.instantiate === 'function',
+      crypto: typeof scope.crypto?.subtle?.digest === 'function' && typeof scope.crypto?.randomUUID === 'function',
+      decompressionStream: typeof scope.DecompressionStream === 'function',
+    };
+  }
+  assertAvailable() {
+    if (Object.values(this.snapshot()).some(value => !value)) throw Object.assign(new Error('Required browser capability unavailable'), {code: 'runtime_capability'});
+  }
+}
+
 export class BrowserConverter {
-  constructor(base, onProgress, workerFactory = url => new Worker(url, {type: 'module'}), identifierFactory = () => crypto.randomUUID()) {
+  constructor(base, onProgress, workerFactory = url => new Worker(url, {type: 'module'}), identifierFactory = () => crypto.randomUUID(), environment = new BrowserEnvironment()) {
     this.base = base;
     this.onProgress = onProgress;
     this.workerFactory = workerFactory;
     this.identifierFactory = identifierFactory;
+    this.environment = environment;
     this.worker = null;
     this.reject = null;
     this.timer = null;
@@ -517,32 +564,46 @@ export class BrowserConverter {
   convert(filename, bytes, onInspection = () => {}) {
     this.cancel();
     return new Promise((resolve, reject) => {
-      let worker = null, timer = null, settled = false;
+      let worker = null, timer = null, settled = false, stage = 'preparing-input', variant = null;
       const finish = (error, result) => {
         if (settled) return;
         settled = true; clearTimeout(timer); worker?.terminate();
         if (this.reject === rejectPending) { this.worker = null; this.reject = null; this.timer = null; }
+        if (error && ['engineError', 'runtime_download', 'runtime_integrity', 'runtime_initialization', 'library_initialization', 'runtime_unavailable', 'runtime_capability', 'wasm_unavailable', 'startup_timeout'].includes(error.code)) {
+          error.diagnostic = new StartupDiagnostic(error.code, stage, variant, this.environment.snapshot());
+        }
         if (error) reject(error); else resolve(result);
       };
       const rejectPending = error => finish(error); this.reject = rejectPending;
       try {
+        this.environment.assertAvailable();
         const id = this.identifierFactory();
+        stage = 'worker-loading';
         worker = this.workerFactory(new URL('assets/conversion-worker.js', this.base)); this.worker = worker;
-        timer = setTimeout(() => finish(Object.assign(new Error('Timeout'), {code: 'timeout'})), 30000); this.timer = timer;
+        timer = setTimeout(() => finish(Object.assign(new Error('Timeout'), {code: ['inspecting', 'converting'].includes(stage) ? 'timeout' : 'startup_timeout'})), 30000); this.timer = timer;
         worker.onerror = worker.onmessageerror = () => finish(Object.assign(new Error('Worker failed'), {code: 'engineError'}));
         worker.onmessage = ({data}) => {
           if (settled || !data || data.id !== id) return;
-          if (data.type === 'progress') this.onProgress(data.stage);
+          if (data.type === 'progress') {
+            if (!['checking-runtime', 'loading-runtime', 'initializing-runtime', 'loading-library', 'initializing-library', 'inspecting', 'converting'].includes(data.stage)) return;
+            stage = data.stage;
+            if (['jspi', 'asyncify'].includes(data.variant)) variant = data.variant;
+            this.onProgress(stage);
+          }
           else if (data.type === 'inspection' || data.type === 'inspection-error') {
             try { onInspection(data.type === 'inspection' ? data.inspection : null, data.error?.code); }
             catch { finish(Object.assign(new Error('Invalid inspection result'), {code: 'engineError'})); }
           }
-          else if (data.type === 'error') finish(Object.assign(new Error('Conversion failed'), {code: data.error?.code || 'conversionError'}));
+          else if (data.type === 'error') {
+            if (['checking-runtime', 'loading-runtime', 'initializing-runtime', 'loading-library', 'initializing-library', 'inspecting', 'converting'].includes(data.error?.stage)) stage = data.error.stage;
+            if (['jspi', 'asyncify'].includes(data.error?.variant)) variant = data.error.variant;
+            finish(Object.assign(new Error('Conversion failed'), {code: data.error?.code || 'conversionError'}));
+          }
           else if (data.type === 'result') finish(null, data);
         };
         const input = bytes.slice().buffer;
         worker.postMessage({type: 'convert', id, filename, input}, [input]);
-      } catch { finish(Object.assign(new Error('Worker could not start'), {code: 'engineError'})); }
+      } catch (error) { finish(Object.assign(new Error('Worker could not start'), {code: error.code === 'runtime_capability' ? error.code : 'engineError'})); }
     });
   }
 }
@@ -635,11 +696,25 @@ class DemoApplication {
       if (generation === this.generation) await this.loadSample(this.manifest.cases.find(sample => sample.id === requested) || this.manifest.cases[0], false);
     } catch (error) { if (generation === this.generation) this.status(this.t.loadError, false, true); }
   }
-  status(message, busy = false, error = false) {
+  status(message, busy = false, error = false, diagnostic = null) {
     this.statusNode.replaceChildren();
     const text = this.element('p');
     if (busy) text.append(this.element('span', 'demo-spinner'));
     text.append(document.createTextNode(message)); this.statusNode.append(text);
+    if (diagnostic instanceof StartupDiagnostic) {
+      const details = this.element('details', 'demo-startup-diagnostic');
+      details.append(this.element('summary', '', this.t.startupDetails), this.element('p', '', this.t.startupHelp));
+      const report = this.element('textarea', 'demo-startup-report');
+      report.readOnly = true; report.rows = 18; report.spellcheck = false;
+      report.setAttribute('aria-label', this.t.startupReport);
+      report.value = JSON.stringify(diagnostic, null, 2);
+      const feedback = this.element('span'); feedback.setAttribute('role', 'status');
+      const copy = this.button(this.t.copyReport, '', async () => {
+        try { await navigator.clipboard.writeText(report.value); feedback.textContent = this.t.copied; }
+        catch { report.focus(); report.select(); feedback.textContent = this.t.selectReport; }
+      });
+      details.append(report, copy, feedback); this.statusNode.append(details);
+    }
     this.statusNode.dataset.error = String(error); this.cancelButton.hidden = !busy;
     this.root.setAttribute('aria-busy', String(busy));
   }
@@ -700,6 +775,7 @@ class DemoApplication {
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (generation !== this.generation) return;
       if (!new TextDecoder().decode(bytes.slice(0, 1024)).includes('%PDF-')) throw Object.assign(new Error('Not PDF'), {code: 'notPdf'});
+      this.converter.environment.assertAvailable();
       const sourceHash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join('');
       if (generation !== this.generation) return;
       this.artifact = {title: file.name, description: this.t.inputDescription, html: null, assets: [], diagnostics: [],
@@ -734,7 +810,8 @@ class DemoApplication {
         Object.assign(this.artifact, {conversionPending: false, inspectionPending: false, conversionError: reason});
         this.renderArtifact(); if (!this.tabSelectedByUser) this.showResult();
       }
-      this.status((this.artifact?.inspection ? this.t.partialComplete + ' ' : '') + reason, false, true);
+      const diagnostic = error.diagnostic || (error.code === 'runtime_capability' ? new StartupDiagnostic(error.code, 'preparing-input', null, this.converter.environment.snapshot()) : null);
+      this.status((this.artifact?.inspection ? this.t.partialComplete + ' ' : '') + reason, false, true, diagnostic);
     }
   }
   blob(bytes, type) { const url = URL.createObjectURL(new Blob([bytes], {type})); this.urls.push(url); return url; }

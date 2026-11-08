@@ -225,7 +225,11 @@ class BrowserChecks {
       check('Clear removes the file and result from the interface', await page.locator('input[type=file]').evaluate(element => element.files.length === 0));
       await this.raceChecks(context, en, assetBase, pdf, check);
       await this.inspectionLifecycleChecks(context, en, pdf, nativeInspection, expected, check, record);
+      await this.startupVocabularyChecks(page, assetBase, check, record);
       await this.startupChecks(context, en, fr, pdf, check, record, name);
+      await this.runtimeFallbackChecks(context, en, pdf, expected, check, record);
+      await this.startupTimeoutChecks(context, en, pdf, check, record);
+      await this.welshBrowserCheck(browser, en, pdf, check, record, name);
       const isolation = await page.evaluate(async moduleUrl => {
         const {PreviewDocument} = await import(moduleUrl);
         const urls = [];
@@ -375,9 +379,11 @@ class BrowserChecks {
             postMessage(message) {
               this.message = message;
               queueMicrotask(() => {
+                this.onmessage({data: {type: 'progress', id: message.id, stage: 'inspecting', variant: 'asyncify'}});
                 this.onmessage({data: scenario === 'inspection-error'
                   ? {type: 'inspection-error', id: message.id, error: {code: 'resource_limit'}}
                   : {type: 'inspection', id: message.id, inspection}});
+                this.onmessage({data: {type: 'progress', id: message.id, stage: 'converting', variant: 'asyncify'}});
                 if (scenario === 'inspection-error') this.onmessage({data: {type: 'result', id: message.id, result: {html, assets: [], diagnostics: []}}});
               });
             }
@@ -491,6 +497,7 @@ class BrowserChecks {
         const result = converter.convert('private-inspection.pdf', new Uint8Array([1]), value => { current = value; deliveries++; });
         window.setTimeout = originalTimer;
         worker.onmessage({data: {type: 'inspection', id: 'previous-job', inspection: {invalid: true}}});
+        worker.onmessage({data: {type: 'progress', id: 'inspection-job', stage: 'inspecting', variant: 'asyncify'}});
         worker.onmessage({data: {type: 'inspection', id: 'inspection-job', inspection: wrapper}});
         if (ending === 'cancel') converter.cancel();
         else if (ending === 'timeout') timeout();
@@ -595,37 +602,207 @@ class BrowserChecks {
       Object.assign(conversion, {nativeHtmlSha256: crypto.createHash('sha256').update(html).digest('hex'), assets: hashes, passed: true});
     }
   }
+  async startupVocabularyChecks(page, assetBase, check, record) {
+    const evidence = await page.evaluate(async moduleUrl => {
+      const {StartupDiagnostic, BrowserConverter, BrowserEnvironment} = await import(moduleUrl);
+      const hostile = 'private-runtime-detail.pdf <script>location="https://example.invalid/private"</script>';
+      const raw = new StartupDiagnostic(hostile, hostile, hostile, {secureContext: true, worker: hostile,
+        webAssembly: {message: hostile}, crypto: false, decompressionStream: null, filename: hostile});
+      const safe = JSON.parse(JSON.stringify(raw));
+      let terminated = 0;
+      const worker = {postMessage() {}, terminate() { terminated++; }};
+      const converter = new BrowserConverter(new URL('./', moduleUrl), () => {}, () => worker, () => 'private-report-job');
+      const promise = converter.convert(hostile, new Uint8Array([1]));
+      worker.onmessage({data: {type: 'progress', id: 'private-report-job', stage: 'loading-runtime', variant: 'asyncify'}});
+      worker.onmessage({data: {type: 'progress', id: 'private-report-job', stage: hostile, variant: hostile}});
+      worker.onmessage({data: {type: 'error', id: 'private-report-job', error: {
+        code: 'runtime_initialization', stage: hostile, variant: hostile, message: hostile, stack: hostile,
+      }}});
+      const failure = await promise.catch(error => error);
+      let workerCreated = false;
+      const missing = new BrowserConverter(new URL('./', moduleUrl), () => {}, () => { workerCreated = true; return worker; },
+        () => 'missing-capability', new BrowserEnvironment({}));
+      const unavailable = await missing.convert(hostile, new Uint8Array([1])).catch(error => error);
+      return {safe, workerReport: failure.diagnostic, unavailableReport: unavailable.diagnostic, workerCreated, terminated,
+        noPrivateValues: !JSON.stringify([safe, failure.diagnostic, unavailable.diagnostic]).includes('private-runtime-detail'),
+        cleanup: converter.worker === null && converter.reject === null && converter.timer === null
+          && missing.worker === null && missing.reject === null && missing.timer === null};
+    }, new URL('app.js', assetBase).href);
+    assert.deepEqual(evidence.safe, {schemaVersion: 1, applicationVersion: '0.4.2', code: 'engineError', stage: 'worker-loading', runtimeVariant: null,
+      capabilities: {secureContext: true, worker: false, webAssembly: false, crypto: false, decompressionStream: false}});
+    check('Diagnostic values are a closed vocabulary and cannot serialize private error text or additional fields', evidence.noPrivateValues);
+    check('Unrecognized Worker progress and error details preserve the last known stage and runtime variant',
+      evidence.workerReport.code === 'runtime_initialization' && evidence.workerReport.stage === 'loading-runtime' && evidence.workerReport.runtimeVariant === 'asyncify');
+    check('Missing browser capabilities produce a bounded report before creating a Worker and release resources',
+      evidence.unavailableReport.code === 'runtime_capability' && evidence.unavailableReport.stage === 'preparing-input'
+      && !evidence.workerCreated && evidence.terminated === 1 && evidence.cleanup);
+    record.startupVocabulary = evidence;
+  }
+  async startupReport(page, expectedCode, expectedStage, pdf) {
+    const details = page.locator('details.demo-startup-diagnostic');
+    await details.waitFor();
+    if (!await details.evaluate(element => element.open)) await details.locator('summary').click();
+    const textarea = details.locator('textarea.demo-startup-report');
+    await textarea.waitFor({state: 'visible'});
+    assert.equal(await textarea.evaluate(element => element.readOnly), true);
+    const serialized = await textarea.inputValue();
+    const report = JSON.parse(serialized);
+    assert.deepEqual(Object.keys(report).sort(), ['applicationVersion', 'capabilities', 'code', 'runtimeVariant', 'schemaVersion', 'stage']);
+    assert.equal(report.schemaVersion, 1);
+    assert.equal(report.applicationVersion, '0.4.2');
+    assert.equal(report.code, expectedCode);
+    assert.equal(report.stage, expectedStage);
+    assert.ok([null, 'jspi', 'asyncify'].includes(report.runtimeVariant));
+    assert.deepEqual(Object.keys(report.capabilities).sort(), ['crypto', 'decompressionStream', 'secureContext', 'webAssembly', 'worker']);
+    assert.ok(Object.values(report.capabilities).every(value => typeof value === 'boolean'));
+    assert.ok(!serialized.includes('private-startup-test') && !serialized.includes('private-runtime-detail')
+      && !serialized.includes(pdf.toString()) && !serialized.includes(pdf.toString('base64')));
+    return report;
+  }
+  async interceptWorker(page, prefix) {
+    // Controlled local acceptance fixture: alter only the test worker response.
+    await page.route('**/assets/conversion-worker.js', async route => {
+      const response = await route.fetch();
+      await route.fulfill({response, body: prefix + '\n' + await response.text()});
+    });
+  }
   async startupChecks(context, en, fr, pdf, check, record, browserName) {
     record.startupFailures = [];
     for (const [language, url, messages] of [
       ['en', en, ['The local conversion engine could not load or run.', 'A file needed by the local converter could not be downloaded.', 'A downloaded converter file did not match the expected version.']],
       ['fr', fr, ['Le moteur de conversion local n’a pas pu se charger ou s’exécuter.', 'Un fichier nécessaire au convertisseur local n’a pas pu être téléchargé.', 'Un fichier téléchargé du convertisseur ne correspond pas à la version attendue.']],
     ]) {
-      for (const [index, scenario] of ['worker', 'download', 'integrity'].entries()) {
+      for (const [index, scenario] of ['worker', 'download', 'integrity', 'wasm-missing', 'wasm-blocked'].entries()) {
+        const page = await context.newPage();
+        const requests = [];
+        page.on('request', request => requests.push({url: request.url(), method: request.method(), body: request.postData()}));
+        try {
+          if (scenario === 'worker') await page.route('**/assets/conversion-worker.js', route => route.abort('blockedbyclient'));
+          if (scenario === 'download') await page.route('**/assets/runtime-manifest.json', route => route.fulfill({status: 404, body: 'Missing runtime'}));
+          if (scenario === 'integrity') await page.route('**/assets/runtime/*/php_8_3.js', route => route.fulfill({status: 200, contentType: 'text/javascript', body: 'fetch("/must-not-execute-corrupt-runtime")'}));
+          if (scenario === 'wasm-missing') await this.interceptWorker(page,
+            "Object.defineProperty(globalThis, 'WebAssembly', {value: undefined, configurable: true});");
+          if (scenario === 'wasm-blocked') await this.interceptWorker(page,
+            "WebAssembly.instantiate = async () => { throw new WebAssembly.CompileError('private-runtime-detail'); }; WebAssembly.compile = WebAssembly.instantiate;");
+          await page.goto(url.href);
+          await page.locator('.demo-sample').first().waitFor();
+          await page.locator('input[type=file]').setInputFiles({name: 'private-startup-test.pdf', mimeType: 'application/pdf', buffer: pdf});
+          await page.waitForFunction(() => document.querySelector('.demo-status')?.dataset.error === 'true');
+          const status = await page.locator('.demo-status').textContent();
+          const code = ['engineError', 'runtime_download', 'runtime_integrity', 'wasm_unavailable', 'wasm_unavailable'][index];
+          const stage = ['worker-loading', 'loading-runtime', 'loading-runtime', 'checking-runtime', 'checking-runtime'][index];
+          const diagnostic = await this.startupReport(page, code, stage, pdf);
+          check(language + ': ' + scenario + ' failure reports a private, bounded diagnostic and releases its busy state',
+            (index >= messages.length || status.startsWith(messages[index])) && !status.includes('private-startup-test') && !status.includes('current version')
+            && !status.includes('private-runtime-detail') && (index === 0 || index >= 3 ? diagnostic.runtimeVariant === null : ['jspi', 'asyncify'].includes(diagnostic.runtimeVariant))
+            && await page.locator('[data-demo-root]').getAttribute('aria-busy') === 'false'
+            && await page.locator('.demo-workspace iframe').count() === 0
+            && requests.every(request => request.method === 'GET' && !request.body && !request.url.includes('must-not-execute') && !request.url.includes('private-startup-test')));
+          if (scenario.startsWith('wasm-')) check(language + ': ' + scenario + ' is detected before fetching PHP or application bytes',
+            !requests.some(request => /runtime-manifest\.json|\.wasm(?:\.gz)?$|application\.zip|php_8_3\.js/.test(request.url)));
+          const filename = browserName + '-startup-' + language + '-' + scenario + '.png';
+          await page.screenshot({path: path.join(this.output, filename), fullPage: true});
+          record.screenshots.push(filename);
+          record.startupFailures.push({language, scenario, status, diagnostic, controlledFailure: true, passed: true});
+          await page.getByRole('button', {name: language === 'fr' ? 'Effacer mon fichier' : 'Clear my file', exact: true}).click();
+          check(language + ': ' + scenario + ' diagnostic is removed when clearing the file', await page.locator('.demo-startup-diagnostic').count() === 0);
+        } finally { await page.close(); }
+      }
+    }
+  }
+  async runtimeFallbackChecks(context, url, pdf, nativeHtml, check, record) {
+    const page = await context.newPage();
+    const requests = [];
+    page.on('request', request => requests.push({url: request.url(), method: request.method(), body: request.postData()}));
+    try {
+      await this.interceptWorker(page,
+        "Object.defineProperty(WebAssembly, 'Suspending', {value: function Suspending() {}, configurable: true}); Object.defineProperty(WebAssembly, 'promising', {value: undefined, configurable: true});");
+      await page.goto(url.href);
+      await page.locator('.demo-sample').first().waitFor();
+      const requestStart = requests.length;
+      await page.locator('input[type=file]').setInputFiles({name: 'mathml.pdf', mimeType: 'application/pdf', buffer: pdf});
+      await page.waitForFunction(() => document.querySelector('.demo-status')?.textContent.includes('Conversion complete'), null, {timeout: 45000});
+      await page.getByRole('tab', {name: 'HTML code', exact: true}).click();
+      assert.equal(await page.locator('.demo-code').textContent(), nativeHtml);
+      check('Partial JSPI APIs select Asyncify and still produce byte-exact native HTML in a real Worker',
+        requests.some(request => /runtime\/asyncify\/.*\.wasm\.gz$/.test(request.url))
+        && !requests.some(request => /runtime\/jspi\//.test(request.url))
+        && await page.locator('.demo-startup-diagnostic').count() === 0);
+      check('The Asyncify fallback sends no PDF bytes or filename after file selection',
+        requests.slice(requestStart).every(request => request.method === 'GET' && !request.body && new URL(request.url).origin === this.base.origin
+          && !request.url.includes('mathml.pdf')));
+      record.runtimeFallback = {scenario: 'Suspending-without-promising', selectedVariant: 'asyncify', realConversion: true,
+        nativeHtmlSha256: crypto.createHash('sha256').update(nativeHtml).digest('hex'), passed: true};
+    } finally { await page.close(); }
+  }
+  async startupTimeoutChecks(context, url, pdf, check, record) {
+    record.timeoutClassification = [];
+    for (const stage of ['worker-loading', 'checking-runtime', 'loading-runtime', 'initializing-runtime', 'loading-library', 'initializing-library', 'inspecting', 'converting']) {
       const page = await context.newPage();
-      const requests = [];
-      page.on('request', request => requests.push({url: request.url(), method: request.method(), body: request.postData()}));
+      const processing = ['inspecting', 'converting'].includes(stage);
       try {
-        if (scenario === 'worker') await page.route('**/assets/conversion-worker.js', route => route.abort('blockedbyclient'));
-        if (scenario === 'download') await page.route('**/assets/runtime-manifest.json', route => route.fulfill({status: 404, body: 'Missing runtime'}));
-        if (scenario === 'integrity') await page.route('**/assets/runtime/*/php_8_3.js', route => route.fulfill({status: 200, contentType: 'text/javascript', body: 'fetch("/must-not-execute-corrupt-runtime")'}));
+        await page.addInitScript(stage => {
+          window.timeoutWorkers = [];
+          window.Worker = class {
+            constructor() { this.terminated = 0; window.timeoutWorkers.push(this); }
+            terminate() { this.terminated++; }
+            postMessage(message) {
+              this.message = message;
+              if (stage !== 'worker-loading') queueMicrotask(() => this.onmessage({data: {
+                type: 'progress', id: message.id, stage, variant: stage === 'checking-runtime' ? null : 'asyncify',
+              }}));
+            }
+          };
+        }, stage);
+        await page.clock.install();
         await page.goto(url.href);
         await page.locator('.demo-sample').first().waitFor();
         await page.locator('input[type=file]').setInputFiles({name: 'private-startup-test.pdf', mimeType: 'application/pdf', buffer: pdf});
+        await page.waitForFunction(() => window.timeoutWorkers[0]?.message);
+        await page.clock.fastForward(30001);
         await page.waitForFunction(() => document.querySelector('.demo-status')?.dataset.error === 'true');
         const status = await page.locator('.demo-status').textContent();
-        check(language + ': ' + scenario + ' failure reports its own localized cause without exposing runtime errors',
-          status.startsWith(messages[index]) && !status.includes('private-startup-test') && !status.includes('current version')
-          && await page.locator('[data-demo-root]').getAttribute('aria-busy') === 'false'
-          && await page.locator('.demo-workspace iframe').count() === 0
-          && requests.every(request => request.method === 'GET' && !request.body && !request.url.includes('must-not-execute') && !request.url.includes('private-startup-test')));
-        const filename = browserName + '-startup-' + language + '-' + scenario + '.png';
-        await page.screenshot({path: path.join(this.output, filename), fullPage: true});
-        record.screenshots.push(filename);
-        record.startupFailures.push({language, scenario, status, passed: true});
+        const diagnostic = processing ? null : await this.startupReport(page, 'startup_timeout', stage, pdf);
+        check(stage + ': the deadline distinguishes engine startup from PDF processing', processing
+          ? status.startsWith('This document exceeded the 30-second limit.') && await page.locator('.demo-startup-diagnostic').count() === 0
+          : !status.includes('smaller or simpler') && diagnostic.stage === stage
+            && diagnostic.runtimeVariant === (['worker-loading', 'checking-runtime'].includes(stage) ? null : 'asyncify'));
+        check(stage + ': a timed-out Worker is terminated exactly once and clears busy state',
+          await page.evaluate(() => window.timeoutWorkers[0].terminated === 1)
+          && await page.locator('[data-demo-root]').getAttribute('aria-busy') === 'false');
+        record.timeoutClassification.push({stage, code: processing ? 'timeout' : 'startup_timeout', diagnostic, controlledClock: true, passed: true});
       } finally { await page.close(); }
-      }
     }
+  }
+  async welshBrowserCheck(browser, url, pdf, check, record, browserName) {
+    const context = await browser.newContext({locale: 'cy'});
+    const page = await context.newPage();
+    try {
+      await page.route('**/assets/conversion-worker.js', route => route.abort('blockedbyclient'));
+      await page.goto(url.href);
+      await page.locator('.demo-sample').first().waitFor();
+      await page.locator('input[type=file]').setInputFiles({name: 'private-startup-test.pdf', mimeType: 'application/pdf', buffer: pdf});
+      await page.waitForFunction(() => document.querySelector('.demo-status')?.dataset.error === 'true');
+      const diagnostic = await this.startupReport(page, 'engineError', 'worker-loading', pdf);
+      check('A Welsh browser locale retains the English page and its readable startup diagnostic',
+        await page.evaluate(() => navigator.language === 'cy')
+        && (await page.locator('.demo-status').textContent()).startsWith('The local conversion engine could not load or run.'));
+      await page.setViewportSize({width: 390, height: 844});
+      const details = page.locator('.demo-startup-diagnostic'), summary = details.locator('summary');
+      await summary.click(); await summary.focus(); await page.keyboard.press('Enter');
+      check('The startup diagnostic disclosure opens by keyboard on a mobile viewport', await details.evaluate(element => element.open));
+      await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', {configurable: true,
+        value: {writeText: async () => { throw new Error('Controlled clipboard denial'); }}}));
+      await page.getByRole('button', {name: 'Copy diagnostic', exact: true}).click();
+      check('Clipboard refusal selects the full readonly report for manual copying without horizontal overflow',
+        await page.locator('.demo-startup-report').evaluate(element => document.activeElement === element
+          && element.selectionStart === 0 && element.selectionEnd === element.value.length && element.readOnly)
+        && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+      const filename = browserName + '-startup-cy-mobile.png';
+      await page.screenshot({path: path.join(this.output, filename), fullPage: true}); record.screenshots.push(filename);
+      record.welshBrowser = {locale: 'cy', pageLanguage: 'en', diagnostic, keyboardDisclosure: true,
+        mobileNoOverflow: true, manualCopyFallback: true, passed: true};
+    } finally { await context.close(); }
   }
   async raceChecks(context, url, assetBase, pdf, check) {
     const page = await context.newPage();
