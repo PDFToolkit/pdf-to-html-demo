@@ -6,7 +6,7 @@
 PDFs with their semantic HTML, interact with the results, and convert your own
 tagged PDF without sending it to a server.
 
-Version 0.4.1 uses Reader 0.8.1, HTML 0.8.3 and the canonical core
+Version 0.4.2 uses Reader 0.8.1, HTML 0.8.3 and the canonical core
 `pdftoolkit/pdf:0.12.3`. The runtime bundles their exact published revisions;
 PHP namespaces and conversion behavior are unchanged.
 
@@ -72,6 +72,38 @@ explicit **build-time application capabilities**. Importing those PDFs with the
 default browser profile can produce a different result, explained by diagnostics.
 The signature example uses a public test certificate, checks integrity and does
 not establish PKI trust or permission for later changes.
+
+## When an import cannot start
+
+The gallery uses prepared results and does not need the WebAssembly engine.
+Converting a selected PDF additionally requires a secure context (HTTPS or
+localhost), Workers, WebAssembly, Web Crypto and `DecompressionStream`. The
+application checks these capabilities, including instantiating a small
+WebAssembly module, before loading the conversion engine.
+
+When JavaScript Promise Integration (JSPI) is available, the application tests
+an actual suspension and resumption through both `WebAssembly.Suspending` and
+`WebAssembly.promising`. It selects the JSPI runtime only if that test succeeds;
+otherwise it uses the bundled Asyncify runtime. Asyncify still requires
+WebAssembly. If WebAssembly itself cannot run, the application stops with an
+explicit message rather than trying a runtime that cannot work. These checks do
+not identify which browser setting or extension caused a restriction.
+
+Startup messages distinguish missing capabilities, runtime downloads, integrity
+checks, initialization and a startup deadline from failures while converting a
+PDF. A startup failure offers a local report that you can select and copy into a
+bug report. It contains only `schemaVersion`, `applicationVersion`, a stable
+error `code`, `stage`, `runtimeVariant` and boolean capability results
+(`secureContext`, `worker`, `webAssembly`, `crypto`, `decompressionStream`). It
+contains no PDF name, hash or content, raw exception message or stack trace.
+Nothing is sent automatically; sharing the report is your choice. The report
+schema version is 1.
+
+These checks cover unsupported or restricted runtime configurations. The
+reported Firefox 157 environment on Arch Linux with NoScript has not been
+reproduced, so this release does not establish that its original failure is
+resolved. The local report helps distinguish that failure without requiring the
+PDF itself.
 
 ## Inspect the PDF source
 
@@ -180,6 +212,11 @@ The widget regression places its parent iframe outside a short viewport, scrolls
 it into view before interacting with its content, then checks three distinct
 normal, hover and pressed appearances. The report retains viewport geometry and
 appearance hashes for both standalone and documentation hosting.
+Startup regressions cover working and unavailable JSPI, the Asyncify fallback,
+blocked WebAssembly, sanitized reports in both interface languages, cancellation
+and startup deadlines separately from conversion deadlines. The reports record
+the actual browser versions; they do not stand in for testing the reported
+Firefox 157 configuration.
 CI builds from the exact candidate and retains the generated artifact and reports.
 Native bridge checks run on PHP 8.3, 8.4 and 8.5.
 

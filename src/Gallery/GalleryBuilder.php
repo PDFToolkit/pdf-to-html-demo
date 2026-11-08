@@ -22,7 +22,7 @@ final readonly class GalleryBuilder
     }
 
     /** @return array<string,mixed> */
-    public function build(string $output, ?string $revision, string $version = '0.4.1', ?string $htmlSource = null, bool $draft = false): array
+    public function build(string $output, ?string $revision, string $version = '0.4.2', ?string $htmlSource = null, bool $draft = false): array
     {
         if (InstalledVersions::getReference('pdftoolkit/pdf-to-html') !== self::HTML_REVISION || ltrim(InstalledVersions::getPrettyVersion('pdftoolkit/pdf-to-html') ?? '', 'v') !== '0.8.3') {
             throw new \RuntimeException('Build the gallery with the exact released HTML 0.8.3 dependency.');

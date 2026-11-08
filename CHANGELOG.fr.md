@@ -4,6 +4,26 @@
 
 ## Non publié
 
+## 0.4.2 — 2026-11-08
+
+- Tester l’instanciation WebAssembly avant de charger le moteur de conversion.
+  Vérifier une suspension et une reprise JSPI réelles avec les deux API requises,
+  puis choisir le moteur Asyncify embarqué si JSPI ne peut pas s’exécuter.
+  Signaler explicitement WebAssembly bloqué ; le repli ne contourne pas les
+  restrictions du navigateur.
+- Séparer les délais de démarrage des délais de conversion PDF et conserver des
+  messages distincts pour capacités, téléchargement, intégrité et initialisation.
+- Proposer un rapport local de démarrage sélectionnable et copiable avec versions
+  de l’application/du schéma, code d’erreur stable, étape, variante du moteur et
+  capacités booléennes. Exclure noms, empreintes et contenu PDF, exceptions brutes
+  et traces d’exécution ; ne jamais envoyer automatiquement le rapport. Maintenir
+  les explications françaises et anglaises ensemble.
+- Ajouter des régressions pour le choix du moteur, les capacités restreintes,
+  les échecs de démarrage, la confidentialité du rapport et l’annulation. Ces cas
+  ne reproduisent pas l’environnement Firefox 157 / Arch Linux / NoScript signalé
+  et ne confirment pas la résolution de son échec d’origine.
+- Conserver les dépendances PHP publiées du convertisseur, du Reader et du core.
+
 ## 0.4.1 — 2026-11-02
 
 - Utiliser le nom Composer canonique `pdftoolkit/pdf:^0.12.3` et les dépendances stables migrées. Conserver les namespaces PHP, API et comportements existants.

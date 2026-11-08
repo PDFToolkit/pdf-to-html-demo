@@ -139,7 +139,7 @@ Poppler and system fonts; the manifest records the actual Poppler version.
 ```sh
 composer install --no-dev --prefer-dist --no-interaction
 php bin/build-gallery.php --output dist/gallery \
-  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.4.1
+  --html-source ../pdf-to-html --revision "$(git rev-parse HEAD)" --version 0.4.2
 ```
 
 `--html-source` identifies the released HTML source checkout containing

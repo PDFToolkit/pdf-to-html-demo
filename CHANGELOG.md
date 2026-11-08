@@ -4,6 +4,24 @@
 
 ## Unreleased
 
+## 0.4.2 — 2026-11-08
+
+- Test WebAssembly instantiation before loading the conversion runtime. Verify
+  actual JSPI suspension and resumption through both required APIs, and choose
+  the bundled Asyncify runtime if JSPI cannot execute. Report blocked WebAssembly
+  explicitly; the fallback does not bypass browser restrictions.
+- Separate startup deadlines from PDF conversion deadlines and retain distinct
+  messages for capability, download, integrity and initialization failures.
+- Offer a selectable, copyable local startup report with application/schema
+  versions, stable error code, stage, runtime variant and boolean capabilities.
+  Exclude PDF names, hashes, content, raw exceptions and stack traces; never send
+  the report automatically. Keep English and French guidance aligned.
+- Add regressions for runtime selection, restricted capabilities, startup
+  failures, report privacy and cancellation. These cases do not reproduce the
+  reported Firefox 157 / Arch Linux / NoScript environment or confirm resolution
+  of its original failure.
+- Keep the released PHP converter, Reader and core dependencies unchanged.
+
 ## 0.4.1 — 2026-11-02
 
 - Use the canonical Composer package `pdftoolkit/pdf:^0.12.3` and migrated stable dependencies. Keep existing PHP namespaces, APIs and behavior.

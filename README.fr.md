@@ -6,7 +6,7 @@
 de vrais PDF avec leur HTML sémantique, interagir avec les résultats et convertir
 votre propre PDF balisé sans l’envoyer à un serveur.
 
-La version 0.4.1 utilise Reader 0.8.1, HTML 0.8.3 et le core canonique
+La version 0.4.2 utilise Reader 0.8.1, HTML 0.8.3 et le core canonique
 `pdftoolkit/pdf:0.12.3`. Le runtime embarque leurs révisions publiées exactes ;
 les namespaces PHP et les conversions restent inchangés.
 
@@ -81,6 +81,38 @@ PDF avec le profil navigateur par défaut peut donner un résultat différent,
 expliqué par les diagnostics. L’exemple de signature utilise un certificat public
 de test et vérifie l’intégrité, sans établir la confiance PKI ni les permissions
 des modifications ultérieures.
+
+## Si un import ne démarre pas
+
+La galerie utilise des résultats préparés et ne nécessite pas le moteur
+WebAssembly. La conversion d’un PDF choisi exige en plus un contexte sécurisé
+(HTTPS ou localhost), les Workers, WebAssembly, Web Crypto et
+`DecompressionStream`. L’application vérifie ces capacités, notamment en
+instanciant un petit module WebAssembly, avant de charger le moteur de conversion.
+
+Si JavaScript Promise Integration (JSPI) est disponible, l’application teste
+une suspension et une reprise réelles avec `WebAssembly.Suspending` et
+`WebAssembly.promising`. Elle ne choisit le moteur JSPI que si ce test réussit ;
+sinon, elle utilise le moteur Asyncify embarqué. Asyncify exige toujours
+WebAssembly. Si WebAssembly ne peut pas s’exécuter, l’application s’arrête avec
+un message explicite au lieu d’essayer un moteur inutilisable. Ces contrôles
+n’identifient pas le réglage ou l’extension à l’origine d’une restriction.
+
+Les messages distinguent les capacités manquantes, le téléchargement du moteur,
+les contrôles d’intégrité, l’initialisation et le dépassement du délai de
+démarrage des erreurs de conversion d’un PDF. Un échec de démarrage propose un
+rapport local sélectionnable et copiable dans un ticket. Il contient uniquement
+`schemaVersion`, `applicationVersion`, un `code` d’erreur stable, `stage`,
+`runtimeVariant` et les résultats booléens des capacités (`secureContext`,
+`worker`, `webAssembly`, `crypto`, `decompressionStream`). Il ne contient ni nom,
+empreinte ou contenu du PDF, ni message brut d’exception ou trace d’exécution.
+Rien n’est envoyé automatiquement ; vous choisissez de partager le rapport. La
+version de son schéma est 1.
+
+Ces contrôles couvrent des configurations où le moteur est indisponible ou
+restreint. L’environnement Firefox 157 sous Arch Linux avec NoScript signalé
+n’a pas été reproduit : cette version ne prouve donc pas la résolution de
+l’échec d’origine. Le rapport local aide à le distinguer sans demander le PDF.
 
 ## Construire et lancer
 
@@ -167,6 +199,11 @@ fenêtre peu haute, la fait défiler dans la zone visible avant d’interagir av
 son contenu, puis contrôle trois apparences distinctes : normale, survolée et
 pressée. Le rapport conserve la géométrie et les empreintes pour l’application
 autonome comme pour son intégration à la documentation.
+Les régressions de démarrage couvrent JSPI fonctionnel ou indisponible, le repli
+vers Asyncify, WebAssembly bloqué, les rapports limités dans les deux langues,
+l’annulation et les délais de démarrage distincts des délais de conversion.
+Les rapports relèvent les versions réelles des navigateurs ; ils ne remplacent
+pas un test de la configuration Firefox 157 signalée.
 La CI construit le candidat exact et conserve l’application et
 les rapports. Les contrôles du pont PHP tournent sur PHP 8.3, 8.4 et 8.5.
 
