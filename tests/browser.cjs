@@ -628,7 +628,7 @@ class BrowserChecks {
         cleanup: converter.worker === null && converter.reject === null && converter.timer === null
           && missing.worker === null && missing.reject === null && missing.timer === null};
     }, new URL('app.js', assetBase).href);
-    assert.deepEqual(evidence.safe, {schemaVersion: 1, applicationVersion: '0.4.2', code: 'engineError', stage: 'worker-loading', runtimeVariant: null,
+    assert.deepEqual(evidence.safe, {schemaVersion: 1, applicationVersion: '0.4.3', code: 'engineError', stage: 'worker-loading', runtimeVariant: null,
       capabilities: {secureContext: true, worker: false, webAssembly: false, crypto: false, decompressionStream: false}});
     check('Diagnostic values are a closed vocabulary and cannot serialize private error text or additional fields', evidence.noPrivateValues);
     check('Unrecognized Worker progress and error details preserve the last known stage and runtime variant',
@@ -649,7 +649,7 @@ class BrowserChecks {
     const report = JSON.parse(serialized);
     assert.deepEqual(Object.keys(report).sort(), ['applicationVersion', 'capabilities', 'code', 'runtimeVariant', 'schemaVersion', 'stage']);
     assert.equal(report.schemaVersion, 1);
-    assert.equal(report.applicationVersion, '0.4.2');
+    assert.equal(report.applicationVersion, '0.4.3');
     assert.equal(report.code, expectedCode);
     assert.equal(report.stage, expectedStage);
     assert.ok([null, 'jspi', 'asyncify'].includes(report.runtimeVariant));

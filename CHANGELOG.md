@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+## 0.4.3 — 2026-11-09
+
+- Rebuild the runtime and gallery with published HTML 0.8.4, core 0.12.4 and Codecs 0.1.1; retain Reader 0.8.1 and exact source provenance.
+- Carry forward the 0.4.2 startup correction and private diagnostic while selecting the maintenance releases required by the documentation build. Conversion policies and resource limits remain unchanged.
+
 ## 0.4.2 — 2026-11-08
 
 - Test WebAssembly instantiation before loading the conversion runtime. Verify

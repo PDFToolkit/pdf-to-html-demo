@@ -14,10 +14,10 @@ const assets = path.join(output, 'assets');
 await fs.mkdir(assets, { recursive: true });
 const lock = JSON.parse(await fs.readFile(path.join(root, 'composer.lock'), 'utf8'));
 const expectedReferences = {
-    'pdftoolkit/pdf-codecs': '1f82ae19d6dd874c574a5601d37f3ac63e0d4170',
-    'pdftoolkit/pdf-to-html': '9da8bf2e80a52cafd87543a3d27345e75804e01b',
+    'pdftoolkit/pdf-codecs': 'cec87784274c69031edf52d535f08656bcc40ce9',
+    'pdftoolkit/pdf-to-html': 'f6c662140b0ff2abd98fe048d832cbc10fcd2c1b',
     'pdftoolkit/pdf-reader': '41bfcae6bc4bea76fe6a94486a0bb59c82d61e79',
-    'pdftoolkit/pdf': 'cdb3cb1798177944adb4d1e6fd92e0ff2dfc6f06',
+    'pdftoolkit/pdf': 'e98bc2368701569c21c0eb665fae2a4d62655620',
 };
 const installed = JSON.parse(await fs.readFile(path.join(root, 'vendor/composer/installed.json'), 'utf8'));
 if (installed.dev || installed.packages.length !== 4 || lock.packages.length !== 4 || lock['packages-dev'].length) {

@@ -64,14 +64,14 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: PDFToolkit/pdf-to-html
-          ref: v0.8.3
+          ref: v0.8.4
           fetch-depth: 0
           path: html-source
       - name: Verify the immutable annotated converter release
         run: |
-          test "$(git -C ../html-source cat-file -t refs/tags/v0.8.3)" = tag
-          test "$(git -C ../html-source rev-parse refs/tags/v0.8.3^{commit})" = 9da8bf2e80a52cafd87543a3d27345e75804e01b
-          test "$(git -C ../html-source rev-parse HEAD)" = 9da8bf2e80a52cafd87543a3d27345e75804e01b
+          test "$(git -C ../html-source cat-file -t refs/tags/v0.8.4)" = tag
+          test "$(git -C ../html-source rev-parse refs/tags/v0.8.4^{commit})" = f6c662140b0ff2abd98fe048d832cbc10fcd2c1b
+          test "$(git -C ../html-source rev-parse HEAD)" = f6c662140b0ff2abd98fe048d832cbc10fcd2c1b
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'

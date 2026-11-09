@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7c506bd3c092a6d510a44590685f3ac4",
+    "content-hash": "048eca6eefd47cd474ef9f74ac0ae230",
     "packages": [
         {
             "name": "pdftoolkit/pdf",
-            "version": "v0.12.3",
+            "version": "v0.12.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PDFToolkit/pdf.git",
-                "reference": "cdb3cb1798177944adb4d1e6fd92e0ff2dfc6f06"
+                "reference": "e98bc2368701569c21c0eb665fae2a4d62655620"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PDFToolkit/pdf/zipball/cdb3cb1798177944adb4d1e6fd92e0ff2dfc6f06",
-                "reference": "cdb3cb1798177944adb4d1e6fd92e0ff2dfc6f06",
+                "url": "https://api.github.com/repos/PDFToolkit/pdf/zipball/e98bc2368701569c21c0eb665fae2a4d62655620",
+                "reference": "e98bc2368701569c21c0eb665fae2a4d62655620",
                 "shasum": ""
             },
             "require": {
@@ -84,20 +84,20 @@
                 "issues": "https://github.com/PDFToolkit/pdf/issues",
                 "source": "https://github.com/PDFToolkit/pdf"
             },
-            "time": "2026-11-02T20:24:02+00:00"
+            "time": "2026-11-09T06:59:37+00:00"
         },
         {
             "name": "pdftoolkit/pdf-codecs",
-            "version": "v0.1.0",
+            "version": "v0.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PDFToolkit/pdf-codecs.git",
-                "reference": "1f82ae19d6dd874c574a5601d37f3ac63e0d4170"
+                "reference": "cec87784274c69031edf52d535f08656bcc40ce9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PDFToolkit/pdf-codecs/zipball/1f82ae19d6dd874c574a5601d37f3ac63e0d4170",
-                "reference": "1f82ae19d6dd874c574a5601d37f3ac63e0d4170",
+                "url": "https://api.github.com/repos/PDFToolkit/pdf-codecs/zipball/cec87784274c69031edf52d535f08656bcc40ce9",
+                "reference": "cec87784274c69031edf52d535f08656bcc40ce9",
                 "shasum": ""
             },
             "require": {
@@ -137,7 +137,7 @@
                 "issues": "https://github.com/PDFToolkit/pdf-codecs/issues",
                 "source": "https://github.com/PDFToolkit/pdf-codecs"
             },
-            "time": "2026-10-28T20:15:16+00:00"
+            "time": "2026-11-09T06:59:37+00:00"
         },
         {
             "name": "pdftoolkit/pdf-reader",
@@ -210,16 +210,16 @@
         },
         {
             "name": "pdftoolkit/pdf-to-html",
-            "version": "v0.8.3",
+            "version": "v0.8.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PDFToolkit/pdf-to-html.git",
-                "reference": "9da8bf2e80a52cafd87543a3d27345e75804e01b"
+                "reference": "f6c662140b0ff2abd98fe048d832cbc10fcd2c1b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PDFToolkit/pdf-to-html/zipball/9da8bf2e80a52cafd87543a3d27345e75804e01b",
-                "reference": "9da8bf2e80a52cafd87543a3d27345e75804e01b",
+                "url": "https://api.github.com/repos/PDFToolkit/pdf-to-html/zipball/f6c662140b0ff2abd98fe048d832cbc10fcd2c1b",
+                "reference": "f6c662140b0ff2abd98fe048d832cbc10fcd2c1b",
                 "shasum": ""
             },
             "require": {
@@ -275,7 +275,7 @@
                 "issues": "https://github.com/PDFToolkit/pdf-to-html/issues",
                 "source": "https://github.com/PDFToolkit/pdf-to-html"
             },
-            "time": "2026-11-02T20:24:02+00:00"
+            "time": "2026-11-09T06:59:38+00:00"
         }
     ],
     "packages-dev": [],

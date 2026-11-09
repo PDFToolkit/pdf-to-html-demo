@@ -4,6 +4,11 @@
 
 ## Non publié
 
+## 0.4.3 — 2026-11-09
+
+- Reconstruire le runtime et la galerie avec HTML 0.8.4, core 0.12.4 et Codecs 0.1.1 publiés ; conserver Reader 0.8.1 et la provenance exacte des sources.
+- Conserver le correctif de démarrage et le diagnostic privé de la 0.4.2 en sélectionnant les versions de maintenance nécessaires à la construction du site. Les politiques de conversion et les limites de ressources restent inchangées.
+
 ## 0.4.2 — 2026-11-08
 
 - Tester l’instanciation WebAssembly avant de charger le moteur de conversion.
